@@ -1,0 +1,127 @@
+import { Router } from 'express';
+import DailySummary from '../models/DailySummary.js';
+import Shift from '../models/Shift.js';
+import auth from '../middleware/auth.js';
+
+const router = Router();
+router.use(auth);
+
+// GET /api/daily-summaries/debts  (before /:id)
+router.get('/debts', async (req, res) => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const pastShifts = await Shift.find({ date: { $lt: today } })
+      .populate('chatterId', 'name')
+      .sort({ date: -1 });
+
+    const summaryShiftIds = new Set(
+      (await DailySummary.find().select('shiftId')).map((s) => s.shiftId.toString()),
+    );
+
+    const debts = pastShifts.filter((s) => !summaryShiftIds.has(s._id.toString()));
+    res.json(debts);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// GET /api/daily-summaries/income
+router.get('/income', async (req, res) => {
+  try {
+    const match = {};
+    if (req.query.startDate || req.query.endDate) {
+      match.date = {};
+      if (req.query.startDate) match.date.$gte = new Date(req.query.startDate);
+      if (req.query.endDate) match.date.$lte = new Date(req.query.endDate);
+    }
+
+    const result = await DailySummary.aggregate([
+      { $match: match },
+      {
+        $group: {
+          _id: '$chatterId',
+          totalIncome: { $sum: '$incomeTotal' },
+          totalTelegram: { $sum: '$incomeTelegram' },
+          totalOnlyfans: { $sum: '$incomeOnlyfans' },
+          totalTransfers: { $sum: '$incomeTransfers' },
+          totalOther: { $sum: '$incomeOther' },
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $lookup: {
+          from: 'chatters',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'chatter',
+        },
+      },
+      { $unwind: '$chatter' },
+      {
+        $project: {
+          chatterId: '$_id',
+          chatterName: '$chatter.name',
+          totalIncome: 1,
+          totalTelegram: 1,
+          totalOnlyfans: 1,
+          totalTransfers: 1,
+          totalOther: 1,
+          count: 1,
+        },
+      },
+      { $sort: { totalIncome: -1 } },
+    ]);
+
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// GET /api/daily-summaries
+router.get('/', async (req, res) => {
+  try {
+    const filter = {};
+    if (req.query.startDate || req.query.endDate) {
+      filter.date = {};
+      if (req.query.startDate) filter.date.$gte = new Date(req.query.startDate);
+      if (req.query.endDate) filter.date.$lte = new Date(req.query.endDate);
+    }
+
+    let query = DailySummary.find(filter)
+      .populate('chatterId', 'name')
+      .sort({ date: -1 });
+
+    if (req.query.limit) query = query.limit(parseInt(req.query.limit));
+
+    const summaries = await query;
+    res.json(summaries);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// POST /api/daily-summaries
+router.post('/', async (req, res) => {
+  try {
+    const summary = await DailySummary.create(req.body);
+    res.status(201).json(summary);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// PUT /api/daily-summaries/:id
+router.put('/:id', async (req, res) => {
+  try {
+    const summary = await DailySummary.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    if (!summary) return res.status(404).json({ message: 'Summary not found' });
+    res.json(summary);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+export default router;
