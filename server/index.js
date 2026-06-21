@@ -3,6 +3,8 @@ import express from 'express';
 import cors from 'cors';
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 import authRoutes from './routes/auth.js';
 import chattersRoutes from './routes/chatters.js';
@@ -14,10 +16,14 @@ import monthlyGoalsRoutes from './routes/monthly-goals.js';
 import errorsRoutes from './routes/errors.js';
 import analyticsRoutes from './routes/analytics.js';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-app.use(cors({ origin: ['http://localhost:5173', 'http://localhost:5174'], credentials: true }));
+const allowedOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(',')
+  : ['http://localhost:5173', 'http://localhost:5174'];
+app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json());
 
 app.use('/api/auth', authRoutes);
@@ -31,6 +37,13 @@ app.use('/api/errors', errorsRoutes);
 app.use('/api/analytics', analyticsRoutes);
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
+
+// Serve static client build in production
+const publicPath = path.join(__dirname, 'public');
+app.use(express.static(publicPath));
+app.get('*', (_req, res) => {
+  res.sendFile(path.join(publicPath, 'index.html'));
+});
 
 async function start() {
   let uri = process.env.MONGODB_URI;
