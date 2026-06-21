@@ -15,6 +15,7 @@ import dailySummariesRoutes from './routes/daily-summaries.js';
 import monthlyGoalsRoutes from './routes/monthly-goals.js';
 import errorsRoutes from './routes/errors.js';
 import analyticsRoutes from './routes/analytics.js';
+import usersRoutes from './routes/users.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -35,6 +36,7 @@ app.use('/api/daily-summaries', dailySummariesRoutes);
 app.use('/api/monthly-goals', monthlyGoalsRoutes);
 app.use('/api/errors', errorsRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/users', usersRoutes);
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
 

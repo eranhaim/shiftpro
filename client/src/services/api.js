@@ -291,6 +291,39 @@ export async function resolveError(id) {
   return res.json();
 }
 
+// Users Management
+function getAdminHeaders(panelPassword) {
+  return {
+    ...getHeaders(),
+    'x-admin-password': panelPassword,
+  };
+}
+
+export async function getUsers(panelPassword) {
+  const res = await fetch(`${API}/users`, { headers: getAdminHeaders(panelPassword) });
+  if (!res.ok) throw new Error((await res.json()).message || 'Failed to fetch users');
+  return res.json();
+}
+
+export async function createUser(data, panelPassword) {
+  const res = await fetch(`${API}/users`, {
+    method: 'POST',
+    headers: getAdminHeaders(panelPassword),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error((await res.json()).message || 'Failed to create user');
+  return res.json();
+}
+
+export async function deleteUser(id, panelPassword) {
+  const res = await fetch(`${API}/users/${id}`, {
+    method: 'DELETE',
+    headers: getAdminHeaders(panelPassword),
+  });
+  if (!res.ok) throw new Error((await res.json()).message || 'Failed to delete user');
+  return res.json();
+}
+
 // Analytics
 export async function getAnalyticsOverview() {
   const res = await fetch(`${API}/analytics/overview`, { headers: getHeaders() });
