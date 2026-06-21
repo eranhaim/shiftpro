@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 const dailySummarySchema = new mongoose.Schema({
   chatterId: { type: mongoose.Schema.Types.ObjectId, ref: 'Chatter', required: true },
-  shiftId:   { type: mongoose.Schema.Types.ObjectId, ref: 'Shift', required: true },
+  shiftId:   { type: mongoose.Schema.Types.ObjectId, ref: 'Shift' },
   date:      { type: Date, required: true },
   dayOfWeek: { type: String },
   shiftType: { type: String, enum: ['בוקר', 'ערב', 'כפולה'] },

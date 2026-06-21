@@ -93,6 +93,36 @@ export default function ShiftSchedule() {
 
   const goToCurrentWeek = () => setWeekStart(getWeekStart(new Date()));
 
+  const handleExport = () => {
+    const headers = ['יום', 'תאריך', 'משמרת', 'צ׳אטר', 'סטטוס', 'מיוצגות'];
+    const rows = [];
+    days.forEach((day, idx) => {
+      SHIFT_TYPES.forEach((type) => {
+        const dayShifts = getShiftsForDayType(day, type.key);
+        dayShifts.forEach((s) => {
+          const models = (s.assignments || []).map((a) => `${a.model_name || a.model?.name || ''} (${a.platform === 'telegram' ? 'טלגרם' : 'אונלי'})`).join(' | ');
+          rows.push([
+            DAY_NAMES[idx],
+            formatDayDate(day),
+            type.label,
+            s.chatter_name || s.chatter?.name || '',
+            s.status || '',
+            models,
+          ]);
+        });
+      });
+    });
+    const BOM = '\uFEFF';
+    const csv = BOM + [headers.join(','), ...rows.map((r) => r.map((c) => `"${c}"`).join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `shifts-${toISODate(weekStart)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleGenerate = async () => {
     try {
       setGenerating(true);
@@ -146,7 +176,7 @@ export default function ShiftSchedule() {
             <Plus className="w-4 h-4" />
             {generating ? 'יוצר...' : 'צור משמרות לשבוע הבא'}
           </button>
-          <button className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition-colors flex items-center gap-2">
+          <button onClick={handleExport} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition-colors flex items-center gap-2">
             <Download className="w-4 h-4" />
             ייצוא משמרות
           </button>

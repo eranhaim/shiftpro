@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Send } from 'lucide-react';
 import Sidebar from './Sidebar';
 import MobileNav from './MobileNav';
 import MobileHeader from './MobileHeader';
@@ -45,10 +44,7 @@ export default function Layout() {
         <MobileHeader onMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)} />
 
         <div className="hidden lg:flex items-center justify-end sticky top-0 bg-gray-900 border-b border-gray-800 px-6 py-3 z-40">
-          <button className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-gray-100 text-sm px-4 py-2 rounded-lg transition-colors">
-            <Send size={16} />
-            <span>שלח הודעה למשמרנים</span>
-          </button>
+          <span className="text-sm text-gray-400">ShiftPro — ניהול משמרות</span>
         </div>
 
         <main className="flex-1 overflow-y-auto bg-gray-950 pt-[52px] pb-[60px] lg:pt-0 lg:pb-0">
