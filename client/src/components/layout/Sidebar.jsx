@@ -28,7 +28,7 @@ export default function Sidebar({ activePage, onNavigate, pendingCount = 0 }) {
   const { user, logout } = useAuth();
 
   return (
-    <aside className="hidden lg:flex lg:flex-col w-64 bg-gray-900 border-l border-gray-800 h-full">
+    <aside className="hidden lg:flex lg:flex-col w-64 bg-gray-900 border-l border-gray-800 h-full order-first">
       <div className="p-6 border-b border-gray-800">
         <h1 className="text-xl font-bold text-white">ShiftPro</h1>
         <p className="text-sm text-gray-400 mt-1">ניהול משמרות</p>

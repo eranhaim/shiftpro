@@ -40,10 +40,16 @@ export default function Layout() {
 
   return (
     <div className="flex h-screen overflow-hidden">
+      <Sidebar
+        activePage={activePage}
+        onNavigate={setActivePage}
+        pendingCount={pendingCount}
+      />
+
       <div className="flex-1 flex flex-col overflow-hidden">
         <MobileHeader onMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)} />
 
-        <div className="hidden lg:flex items-center justify-end sticky top-0 bg-gray-900 border-b border-gray-800 px-6 py-3 z-40">
+        <div className="hidden lg:flex items-center justify-start sticky top-0 bg-gray-900 border-b border-gray-800 px-6 py-3 z-40">
           <span className="text-sm text-gray-400">ShiftPro — ניהול משמרות</span>
         </div>
 
@@ -53,12 +59,6 @@ export default function Layout() {
 
         <MobileNav activePage={activePage} onNavigate={setActivePage} />
       </div>
-
-      <Sidebar
-        activePage={activePage}
-        onNavigate={setActivePage}
-        pendingCount={pendingCount}
-      />
     </div>
   );
 }
