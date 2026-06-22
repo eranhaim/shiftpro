@@ -1,6 +1,7 @@
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Login from './components/auth/Login';
 import Layout from './components/layout/Layout';
+import ChatterPortal from './components/chatter-portal/ChatterPortal';
 import { Loader2 } from 'lucide-react';
 
 function AppContent() {
@@ -15,6 +16,8 @@ function AppContent() {
   }
 
   if (!user) return <Login />;
+
+  if (user.role === 'chatter') return <ChatterPortal />;
 
   return <Layout />;
 }

@@ -3,18 +3,23 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 
 export default function Login() {
-  const { login } = useAuth();
+  const { login, chatterLogin } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [mode, setMode] = useState('admin'); // 'admin' or 'chatter'
 
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
     setSubmitting(true);
     try {
-      await login(email, password);
+      if (mode === 'admin') {
+        await login(email, password);
+      } else {
+        await chatterLogin(email, password);
+      }
     } catch (err) {
       setError(err.message || 'שגיאה בהתחברות');
     } finally {
@@ -29,6 +34,24 @@ export default function Login() {
           <div className="text-center mb-8">
             <h1 className="text-2xl font-bold text-white">ShiftPro</h1>
             <p className="text-gray-400 mt-2">מערכת ניהול משמרות</p>
+          </div>
+
+          {/* Toggle admin / chatter */}
+          <div className="flex bg-gray-800 rounded-lg p-1 mb-6">
+            <button
+              type="button"
+              onClick={() => setMode('admin')}
+              className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${mode === 'admin' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
+            >
+              מנהל
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode('chatter')}
+              className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${mode === 'chatter' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
+            >
+              צ׳אטר
+            </button>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">

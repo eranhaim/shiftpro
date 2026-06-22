@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
 import Chatter from '../models/Chatter.js';
 import auth from '../middleware/auth.js';
 
@@ -23,6 +24,9 @@ router.post('/', async (req, res) => {
     if (!data.token) {
       data.token = crypto.randomBytes(16).toString('hex');
     }
+    if (data.password) {
+      data.password = await bcrypt.hash(data.password, 10);
+    }
     const chatter = await Chatter.create(data);
     res.status(201).json(chatter);
   } catch (err) {
@@ -33,7 +37,11 @@ router.post('/', async (req, res) => {
 // PUT /api/chatters/:id
 router.put('/:id', async (req, res) => {
   try {
-    const chatter = await Chatter.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    const data = { ...req.body };
+    if (data.password) {
+      data.password = await bcrypt.hash(data.password, 10);
+    }
+    const chatter = await Chatter.findByIdAndUpdate(req.params.id, data, { new: true, runValidators: true });
     if (!chatter) return res.status(404).json({ message: 'Chatter not found' });
     res.json(chatter);
   } catch (err) {
