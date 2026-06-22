@@ -2,7 +2,7 @@ services:
   app:
     build: .
     ports:
-      - "80:4000"
+      - "8082:4000"
     env_file:
       - ./server/.env
     restart: unless-stopped
