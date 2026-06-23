@@ -18,6 +18,7 @@ import analyticsRoutes from './routes/analytics.js';
 import usersRoutes from './routes/users.js';
 import chatterAuthRoutes from './routes/chatter-auth.js';
 import chatterPortalRoutes from './routes/chatter-portal.js';
+import adminRoutes from './routes/admin.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -41,6 +42,7 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/chatter-auth', chatterAuthRoutes);
 app.use('/api/chatter-portal', chatterPortalRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
 

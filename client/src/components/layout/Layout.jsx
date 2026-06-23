@@ -10,7 +10,6 @@ import Chatters from '../chatters/Chatters';
 import Models from '../models/Models';
 import Errors from '../errors/Errors';
 import Analytics from '../analytics/Analytics';
-import Users from '../users/Users';
 import { getPendingShifts } from '../../services/api';
 
 const pages = {
@@ -22,7 +21,6 @@ const pages = {
   models: Models,
   errors: Errors,
   analytics: Analytics,
-  users: Users,
 };
 
 export default function Layout() {

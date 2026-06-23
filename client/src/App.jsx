@@ -1,7 +1,9 @@
+import { Routes, Route } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Login from './components/auth/Login';
 import Layout from './components/layout/Layout';
 import ChatterPortal from './components/chatter-portal/ChatterPortal';
+import AdminPanel from './components/admin/AdminPanel';
 import { Loader2 } from 'lucide-react';
 
 function AppContent() {
@@ -25,7 +27,10 @@ function AppContent() {
 export default function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <Routes>
+        <Route path="/admin" element={<AdminPanel />} />
+        <Route path="*" element={<AppContent />} />
+      </Routes>
     </AuthProvider>
   );
 }

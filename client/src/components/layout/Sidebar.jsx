@@ -7,7 +7,6 @@ import {
   Database,
   TriangleAlert,
   BarChart3,
-  ShieldCheck,
   LogOut,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
@@ -21,7 +20,6 @@ const navItems = [
   { id: 'models', label: 'מיוצגות', icon: Database },
   { id: 'errors', label: 'שגיאות', icon: TriangleAlert },
   { id: 'analytics', label: 'אנליטיקס', icon: BarChart3 },
-  { id: 'users', label: 'ניהול משתמשים', icon: ShieldCheck },
 ];
 
 export default function Sidebar({ activePage, onNavigate, pendingCount = 0 }) {
