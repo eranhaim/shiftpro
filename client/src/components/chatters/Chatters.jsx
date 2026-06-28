@@ -61,7 +61,7 @@ export default function Chatters() {
     if (!confirm('האם למחוק את הצ׳אטר?')) return;
     try {
       await deleteChatter(id);
-      setChatters((prev) => prev.filter((c) => c.id !== id));
+      setChatters((prev) => prev.filter((c) => c._id !== id));
     } catch (err) {
       alert(err.message);
     }
@@ -70,16 +70,16 @@ export default function Chatters() {
   const handleTierChange = async (id, tier) => {
     try {
       await updateChatter(id, { tier });
-      setChatters((prev) => prev.map((c) => c.id === id ? { ...c, tier } : c));
+      setChatters((prev) => prev.map((c) => c._id === id ? { ...c, tier } : c));
     } catch (err) {
       alert(err.message);
     }
   };
 
   const copyLink = (chatter) => {
-    const link = chatter.personal_link || `${window.location.origin}/chatter/${chatter.id}`;
+    const link = chatter.token ? `${window.location.origin}/chatter/${chatter.token}` : `${window.location.origin}/chatter/${chatter._id}`;
     navigator.clipboard.writeText(link);
-    setCopiedId(chatter.id);
+    setCopiedId(chatter._id);
     setTimeout(() => setCopiedId(null), 2000);
   };
 
@@ -152,14 +152,14 @@ export default function Chatters() {
               </thead>
               <tbody>
                 {chatters.map((c) => (
-                  <tr key={c.id} className="border-b border-gray-800 hover:bg-gray-800/30">
+                  <tr key={c._id} className="border-b border-gray-800 hover:bg-gray-800/30">
                     <td className="py-3 px-4 text-white font-medium">{c.name}</td>
                     <td className="py-3 px-4 text-gray-300">{c.phone || '—'}</td>
-                    <td className="py-3 px-4 text-gray-400 text-sm">{formatLastLogin(c.last_login)}</td>
+                    <td className="py-3 px-4 text-gray-400 text-sm">{formatLastLogin(c.lastSignInAt)}</td>
                     <td className="py-3 px-4">
                       <select
                         value={c.tier || 'אוטומטי'}
-                        onChange={(e) => handleTierChange(c.id, e.target.value)}
+                        onChange={(e) => handleTierChange(c._id, e.target.value)}
                         className="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-blue-500"
                       >
                         {TIER_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
@@ -170,13 +170,13 @@ export default function Chatters() {
                         onClick={() => copyLink(c)}
                         className="bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-1 rounded text-sm transition-colors flex items-center gap-1"
                       >
-                        {copiedId === c.id ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
-                        {copiedId === c.id ? 'הועתק!' : 'העתק קישור'}
+                        {copiedId === c._id ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
+                        {copiedId === c._id ? 'הועתק!' : 'העתק קישור'}
                       </button>
                     </td>
                     <td className="py-3 px-4">
                       <button
-                        onClick={() => handleDelete(c.id)}
+                        onClick={() => handleDelete(c._id)}
                         className="text-red-500 hover:text-red-400 p-1 transition-colors"
                         title="מחק"
                       >

@@ -85,15 +85,15 @@ export default function Analytics() {
   if (error) return <div className="text-center py-16 text-red-500">{error}</div>;
 
   const kpis = [
-    { label: 'הושלמו (נתוני עבר)', value: `${overview?.completion_rate ?? 0}%`, icon: TrendingUp, color: 'text-green-400' },
-    { label: 'איחור ממוצע (נתוני עבר)', value: overview?.avg_delay ? `${overview.avg_delay} דק׳` : '0 דק׳', icon: Clock, color: 'text-amber-400' },
-    { label: 'סטטוסות פעילות (נתוני עבר)', value: overview?.active_statuses ?? 0, icon: Activity, color: 'text-blue-400' },
-    { label: 'התקדמות יעד חודשי', value: `${overview?.goal_progress ?? 0}%`, icon: Target, color: 'text-purple-400' },
+    { label: 'הושלמו (נתוני עבר)', value: `${overview?.completionRate ?? 0}%`, icon: TrendingUp, color: 'text-green-400' },
+    { label: 'ממתינים לאישור', value: overview?.pendingApprovals ?? 0, icon: Clock, color: 'text-amber-400' },
+    { label: 'משמרות היום', value: overview?.shiftsToday ?? 0, icon: Activity, color: 'text-blue-400' },
+    { label: 'חובות סיכום יום', value: overview?.pendingSummaryDebts ?? 0, icon: Target, color: 'text-purple-400' },
   ];
 
-  const chatterIncomes = Array.isArray(income?.chatters) ? income.chatters : [];
-  const platformData = income?.platforms || {};
-  const goalProgress = Array.isArray(income?.goals) ? income.goals : [];
+  const chatterIncomes = Array.isArray(income?.incomeByChatter) ? income.incomeByChatter : [];
+  const platformData = income?.incomeByPlatform || {};
+  const goalProgress = [];
 
   return (
     <div className="space-y-6" dir="rtl">
@@ -188,10 +188,10 @@ export default function Analytics() {
                 <tbody>
                   {chatterIncomes.map((c, i) => (
                     <tr key={i} className="border-b border-gray-800 hover:bg-gray-800/30">
-                      <td className="py-3 px-4 text-white font-medium">{c.name || c.chatter_name}</td>
-                      <td className="py-3 px-4 text-green-400 font-bold">${(c.total_income || 0).toLocaleString()}</td>
-                      <td className="py-3 px-4 text-gray-300">{c.shift_count || 0}</td>
-                      <td className="py-3 px-4 text-gray-300">${(c.avg_income || 0).toLocaleString()}</td>
+                      <td className="py-3 px-4 text-white font-medium">{c.chatterName}</td>
+                      <td className="py-3 px-4 text-green-400 font-bold">${(c.totalIncome || 0).toLocaleString()}</td>
+                      <td className="py-3 px-4 text-gray-300">—</td>
+                      <td className="py-3 px-4 text-gray-300">—</td>
                     </tr>
                   ))}
                 </tbody>
@@ -207,14 +207,15 @@ export default function Analytics() {
           {Object.keys(platformData).length === 0 ? (
             <p className="text-gray-500 text-center py-8">אין נתוני פלטפורמות</p>
           ) : (
-            Object.entries(platformData).map(([platform, data]) => {
-              const total = Object.values(platformData).reduce((s, d) => s + (d.income || 0), 0) || 1;
-              const pct = Math.round(((data.income || 0) / total) * 100);
+            Object.entries(platformData).map(([platform, amount]) => {
+              const total = Object.values(platformData).reduce((s, d) => s + (d || 0), 0) || 1;
+              const pct = Math.round(((amount || 0) / total) * 100);
+              const label = platform === 'telegram' ? 'טלגרם' : platform === 'onlyfans' ? 'אונליפאנס' : 'העברות';
               return (
                 <div key={platform}>
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-white text-sm">{platform === 'telegram' ? 'טלגרם' : 'אונליפאנס'}</span>
-                    <span className="text-gray-400 text-sm">${(data.income || 0).toLocaleString()} ({pct}%)</span>
+                    <span className="text-white text-sm">{label}</span>
+                    <span className="text-gray-400 text-sm">${(amount || 0).toLocaleString()} ({pct}%)</span>
                   </div>
                   <div className="w-full bg-gray-800 rounded-full h-3">
                     <div
@@ -240,7 +241,7 @@ export default function Analytics() {
               return (
                 <div key={i}>
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-white text-sm">{g.chatter_name || g.name}</span>
+                    <span className="text-white text-sm">{g.chatterName || g.name}</span>
                     <span className="text-gray-400 text-sm">${(g.current || 0).toLocaleString()} / ${(g.goal_amount || 0).toLocaleString()} ({pct}%)</span>
                   </div>
                   <div className="w-full bg-gray-800 rounded-full h-3">

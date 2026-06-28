@@ -85,7 +85,7 @@ export default function Dashboard() {
       });
       setGoals((prev) =>
         prev.map((g) =>
-          g.id === goal.id ? { ...g, goal_amount: Number(editGoalValue) } : g
+          g._id === goal._id ? { ...g, goal_amount: Number(editGoalValue) } : g
         )
       );
       setEditingGoalId(null);
@@ -112,11 +112,11 @@ export default function Dashboard() {
 
   const kpis = [
     { label: 'צ׳אטרים', value: chatters.length, icon: Users },
-    { label: 'מאושרות היום', value: overview?.approved_today ?? 0, icon: TrendingUp },
-    { label: 'סה״כ בקשות היום', value: overview?.total_requests_today ?? 0, icon: Calendar },
-    { label: 'ממתינים לאישור', value: overview?.pending_count ?? 0, icon: Clock, badge: 'חדש', badgeColor: 'bg-green-600' },
+    { label: 'מאושרות היום', value: overview?.shiftsToday ?? 0, icon: TrendingUp },
+    { label: 'סה״כ בקשות היום', value: overview?.shiftRequestsToday ?? 0, icon: Calendar },
+    { label: 'ממתינים לאישור', value: overview?.pendingApprovals ?? 0, icon: Clock, badge: 'חדש', badgeColor: 'bg-green-600' },
     { label: 'חובות סיכום יום', value: debts.length, icon: FileText, badge: 'לבדיקה', badgeColor: 'bg-blue-600' },
-    { label: 'הושלמו (נתוני עבר)', value: `${overview?.completion_rate ?? 0}%`, icon: TrendingUp },
+    { label: 'הושלמו (נתוני עבר)', value: `${overview?.completionRate ?? 0}%`, icon: TrendingUp },
   ];
 
   return (
@@ -197,10 +197,10 @@ export default function Dashboard() {
               </thead>
               <tbody>
                 {goals.map((goal) => (
-                  <tr key={goal.id} className="border-b border-gray-800 hover:bg-gray-800/50">
-                    <td className="py-3 px-4 text-white">{goal.chatter_name || goal.chatter?.name || '—'}</td>
+                  <tr key={goal._id} className="border-b border-gray-800 hover:bg-gray-800/50">
+                    <td className="py-3 px-4 text-white">{goal.chatterId?.name || goal.chatter_name || '—'}</td>
                     <td className="py-3 px-4 text-white">
-                      {editingGoalId === goal.id ? (
+                      {editingGoalId === goal._id ? (
                         <input
                           type="number"
                           value={editGoalValue}
@@ -214,14 +214,14 @@ export default function Dashboard() {
                       )}
                     </td>
                     <td className="py-3 px-4">
-                      {editingGoalId === goal.id ? (
+                      {editingGoalId === goal._id ? (
                         <div className="flex gap-2">
                           <button onClick={() => handleSaveGoal(goal)} className="text-green-500 hover:text-green-400 text-sm">שמור</button>
                           <button onClick={() => setEditingGoalId(null)} className="text-gray-400 hover:text-gray-300 text-sm">בטל</button>
                         </div>
                       ) : (
                         <button
-                          onClick={() => { setEditingGoalId(goal.id); setEditGoalValue(goal.goal_amount || ''); }}
+                          onClick={() => { setEditingGoalId(goal._id); setEditGoalValue(goal.goal_amount || ''); }}
                           className="text-blue-400 hover:text-blue-300 text-sm"
                         >
                           ערוך

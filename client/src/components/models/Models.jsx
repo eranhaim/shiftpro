@@ -58,7 +58,7 @@ export default function Models() {
     if (!confirm('האם למחוק את המיוצגת?')) return;
     try {
       await deleteModel(id);
-      setModels((prev) => prev.filter((m) => m.id !== id));
+      setModels((prev) => prev.filter((m) => m._id !== id));
     } catch (err) {
       alert(err.message);
     }
@@ -67,8 +67,8 @@ export default function Models() {
   const handleTogglePlatform = async (model, platform) => {
     const updated = { ...model, [platform]: !model[platform] };
     try {
-      await updateModel(model.id, { [platform]: updated[platform] });
-      setModels((prev) => prev.map((m) => m.id === model.id ? { ...m, [platform]: updated[platform] } : m));
+      await updateModel(model._id, { [platform]: updated[platform] });
+      setModels((prev) => prev.map((m) => m._id === model._id ? { ...m, [platform]: updated[platform] } : m));
     } catch (err) {
       alert(err.message);
     }
@@ -77,8 +77,8 @@ export default function Models() {
   const handleToggleActive = async (model) => {
     const active = !model.active;
     try {
-      await updateModel(model.id, { active });
-      setModels((prev) => prev.map((m) => m.id === model.id ? { ...m, active } : m));
+      await updateModel(model._id, { active });
+      setModels((prev) => prev.map((m) => m._id === model._id ? { ...m, active } : m));
     } catch (err) {
       alert(err.message);
     }
@@ -168,7 +168,7 @@ export default function Models() {
           {filtered.map((model) => {
             const platforms = [model.telegram && 'טלגרם', model.onlyfans && 'אונלי'].filter(Boolean).join(' + ');
             return (
-              <div key={model.id} className={`bg-gray-900 rounded-lg p-4 flex flex-wrap items-center justify-between gap-3 ${model.active === false ? 'opacity-50' : ''}`}>
+              <div key={model._id} className={`bg-gray-900 rounded-lg p-4 flex flex-wrap items-center justify-between gap-3 ${model.active === false ? 'opacity-50' : ''}`}>
                 <div>
                   <p className="text-white font-bold">{model.name}</p>
                   <p className="text-sm text-gray-400">פלטפורמות: {platforms || 'ללא'}</p>
@@ -200,7 +200,7 @@ export default function Models() {
                     {model.active === false ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                   <button
-                    onClick={() => handleDelete(model.id)}
+                    onClick={() => handleDelete(model._id)}
                     className="text-red-500 hover:text-red-400 p-1 transition-colors"
                     title="מחק"
                   >

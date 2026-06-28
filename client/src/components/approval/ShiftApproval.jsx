@@ -48,7 +48,7 @@ export default function ShiftApproval() {
     try {
       setActionLoading(id);
       await approveShift(id);
-      setShifts((prev) => prev.filter((s) => s.id !== id));
+      setShifts((prev) => prev.filter((s) => s._id !== id));
     } catch (err) {
       alert(err.message);
     } finally {
@@ -61,7 +61,7 @@ export default function ShiftApproval() {
     try {
       setActionLoading(id);
       await rejectShift(id);
-      setShifts((prev) => prev.filter((s) => s.id !== id));
+      setShifts((prev) => prev.filter((s) => s._id !== id));
     } catch (err) {
       alert(err.message);
     } finally {
@@ -70,7 +70,7 @@ export default function ShiftApproval() {
   };
 
   const grouped = shifts.reduce((acc, shift) => {
-    const name = shift.chatter_name || shift.chatter?.name || 'לא ידוע';
+    const name = shift.chatterId?.name || 'לא ידוע';
     if (!acc[name]) acc[name] = [];
     acc[name].push(shift);
     return acc;
@@ -99,24 +99,24 @@ export default function ShiftApproval() {
           <div key={chatterName} className="space-y-3">
             <h2 className="text-lg font-bold text-amber-400">{chatterName}</h2>
             {chatterShifts.map((shift) => (
-              <div key={shift.id} className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+              <div key={shift._id} className="bg-gray-900 border border-gray-800 rounded-xl p-4">
                 <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
                   <div>
                     <p className="text-white font-medium">{formatShiftDate(shift.date)}</p>
-                    <p className="text-sm text-gray-400">{formatTime(shift.start_time)} - {formatTime(shift.end_time)}</p>
+                    <p className="text-sm text-gray-400">{formatTime(shift.startTime)} - {formatTime(shift.endTime)}</p>
                   </div>
                   <div className="flex gap-2">
                     <button
-                      onClick={() => handleApprove(shift.id)}
-                      disabled={actionLoading === shift.id}
+                      onClick={() => handleApprove(shift._id)}
+                      disabled={actionLoading === shift._id}
                       className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition-colors disabled:opacity-50 flex items-center gap-1"
                     >
                       <CheckCircle className="w-4 h-4" />
                       אשר
                     </button>
                     <button
-                      onClick={() => handleReject(shift.id)}
-                      disabled={actionLoading === shift.id}
+                      onClick={() => handleReject(shift._id)}
+                      disabled={actionLoading === shift._id}
                       className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition-colors disabled:opacity-50 flex items-center gap-1"
                     >
                       <XCircle className="w-4 h-4" />
@@ -138,7 +138,7 @@ export default function ShiftApproval() {
                       <tbody>
                         {shift.assignments.map((a, i) => (
                           <tr key={i} className="border-b border-gray-800/50">
-                            <td className="py-2 px-3 text-white">{a.model_name || a.model?.name}</td>
+                            <td className="py-2 px-3 text-white">{a.modelName || a.model?.name}</td>
                             <td className="py-2 px-3 text-gray-300">{a.platform === 'telegram' ? 'טלגרם' : 'אונליפאנס'}</td>
                             <td className="py-2 px-3">
                               <CheckCircle className="w-4 h-4 text-green-500" />

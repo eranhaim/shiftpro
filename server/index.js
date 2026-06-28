@@ -53,6 +53,9 @@ app.get('*', (_req, res) => {
   res.sendFile(path.join(publicPath, 'index.html'));
 });
 
+mongoose.set('toJSON', { virtuals: true });
+mongoose.set('toObject', { virtuals: true });
+
 async function start() {
   let uri = process.env.MONGODB_URI;
 

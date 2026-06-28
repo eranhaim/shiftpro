@@ -100,12 +100,12 @@ export default function ShiftSchedule() {
       SHIFT_TYPES.forEach((type) => {
         const dayShifts = getShiftsForDayType(day, type.key);
         dayShifts.forEach((s) => {
-          const models = (s.assignments || []).map((a) => `${a.model_name || a.model?.name || ''} (${a.platform === 'telegram' ? 'טלגרם' : 'אונלי'})`).join(' | ');
+          const models = (s.assignments || []).map((a) => `${a.modelName || a.model?.name || ''} (${a.platform === 'telegram' ? 'טלגרם' : 'אונלי'})`).join(' | ');
           rows.push([
             DAY_NAMES[idx],
             formatDayDate(day),
             type.label,
-            s.chatter_name || s.chatter?.name || '',
+            s.chatterId?.name || '',
             s.status || '',
             models,
           ]);
@@ -149,8 +149,8 @@ export default function ShiftSchedule() {
       const shiftDate = s.date?.split('T')[0] || s.date;
       const isMatchDate = shiftDate === dateStr;
       const isMatchType = type === 'morning'
-        ? (s.shift_type === 'morning' || s.start_time === '12:00')
-        : (s.shift_type === 'evening' || s.start_time === '19:00');
+        ? (s.shiftType === 'morning' || s.startTime === '12:00')
+        : (s.shiftType === 'evening' || s.startTime === '19:00');
       return isMatchDate && isMatchType;
     });
   };
@@ -161,7 +161,7 @@ export default function ShiftSchedule() {
 
   const coveredModels = new Set();
   selectedDayShifts.forEach((s) => {
-    (s.assignments || []).forEach((a) => coveredModels.add(a.model_id));
+    (s.assignments || []).forEach((a) => coveredModels.add(a.modelId));
   });
 
   if (loading) return <Spinner />;
@@ -213,12 +213,12 @@ export default function ShiftSchedule() {
                     <p className="text-xs text-gray-600 text-center">—</p>
                   ) : (
                     dayShifts.map((shift) => (
-                      <div key={shift.id} className="bg-gray-800 border border-gray-700 rounded-lg p-2 mb-1">
-                        <p className="text-sm font-bold text-white">{shift.chatter_name || shift.chatter?.name || 'צ׳אטר'}</p>
+                      <div key={shift._id} className="bg-gray-800 border border-gray-700 rounded-lg p-2 mb-1">
+                        <p className="text-sm font-bold text-white">{shift.chatterId?.name || 'צ׳אטר'}</p>
                         {getStatusBadge(shift.status)}
                         {(shift.assignments || []).map((a, ai) => (
                           <p key={ai} className="text-xs text-gray-400 mt-1">
-                            {a.model_name || a.model?.name} - {a.platform === 'telegram' ? 'טלגרם' : 'אונליפאנס'}
+                            {a.modelName || a.model?.name} - {a.platform === 'telegram' ? 'טלגרם' : 'אונליפאנס'}
                           </p>
                         ))}
                         <p className="text-xs text-gray-500 mt-1">{type.start}-{type.end}</p>
@@ -249,12 +249,12 @@ export default function ShiftSchedule() {
               </thead>
               <tbody>
                 {models.map((model) => {
-                  const isCovered = coveredModels.has(model.id);
-                  const assignments = selectedDayShifts.flatMap((s) => (s.assignments || []).filter((a) => a.model_id === model.id));
+                  const isCovered = coveredModels.has(model._id);
+                  const assignments = selectedDayShifts.flatMap((s) => (s.assignments || []).filter((a) => a.modelId === model._id));
                   const hasTelegram = assignments.some((a) => a.platform === 'telegram');
                   const hasOnlyfans = assignments.some((a) => a.platform === 'onlyfans');
                   return (
-                    <tr key={model.id} className="border-b border-gray-800">
+                    <tr key={model._id} className="border-b border-gray-800">
                       <td className="py-2 px-4 text-white">{model.name}</td>
                       <td className="py-2 px-4 text-center">
                         {hasTelegram ? <Check className="w-4 h-4 text-green-500 mx-auto" /> : <span className="text-gray-600">—</span>}

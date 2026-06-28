@@ -47,7 +47,7 @@ export default function Errors() {
   const handleResolve = async (id) => {
     try {
       await resolveError(id);
-      setErrors((prev) => prev.filter((e) => e.id !== id));
+      setErrors((prev) => prev.filter((e) => e._id !== id));
     } catch (err) {
       alert(err.message);
     }
@@ -91,19 +91,19 @@ export default function Errors() {
       ) : (
         <div className="space-y-3">
           {errors.map((err) => (
-            <div key={err.id} className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+            <div key={err._id} className="bg-gray-900 border border-gray-800 rounded-xl p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="flex items-start gap-3">
                   <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
                   <div>
                     <p className="text-white font-medium">{err.message}</p>
                     {err.source && <p className="text-sm text-gray-400 mt-1">מקור: {err.source}</p>}
-                    <p className="text-xs text-gray-500 mt-1">{formatTimestamp(err.created_at || err.timestamp)}</p>
+                    <p className="text-xs text-gray-500 mt-1">{formatTimestamp(err.createdAt || err.timestamp)}</p>
                   </div>
                 </div>
                 {!err.resolved && (
                   <button
-                    onClick={() => handleResolve(err.id)}
+                    onClick={() => handleResolve(err._id)}
                     className="bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-1.5 rounded-lg text-sm transition-colors whitespace-nowrap"
                   >
                     סמן כפתור
