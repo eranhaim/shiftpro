@@ -122,29 +122,29 @@ export default function ChatterPortal() {
     <div className="min-h-screen bg-gray-950 text-white" dir="rtl">
       {/* Header */}
       <header className="bg-gray-900 border-b border-gray-800 px-4 py-3 flex items-center justify-between sticky top-0 z-50">
-        <div>
-          <h1 className="text-lg font-bold">ShiftPro</h1>
-          <p className="text-xs text-gray-400">שלום, {user?.name || user?.email}</p>
+        <div className="min-w-0">
+          <h1 className="text-lg font-bold truncate">ShiftPro</h1>
+          <p className="text-xs text-gray-400 truncate">שלום, {user?.name || user?.email}</p>
         </div>
-        <button onClick={logout} className="text-gray-400 hover:text-red-400 transition-colors" title="התנתק">
+        <button onClick={logout} className="text-gray-400 hover:text-red-400 transition-colors shrink-0" title="התנתק">
           <LogOut size={20} />
         </button>
       </header>
 
       {/* Tabs */}
       <div className="flex bg-gray-900 border-b border-gray-800">
-        <button onClick={() => setTab('shifts')} className={`flex-1 py-3 text-sm font-medium transition-colors ${tab === 'shifts' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-gray-400'}`}>
+        <button onClick={() => setTab('shifts')} className={`flex-1 py-3 text-sm font-medium transition-colors text-center ${tab === 'shifts' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-gray-400'}`}>
           <Calendar className="w-4 h-4 inline ml-1" />
           המשמרות שלי
         </button>
-        <button onClick={() => setTab('summaries')} className={`flex-1 py-3 text-sm font-medium transition-colors ${tab === 'summaries' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-gray-400'}`}>
+        <button onClick={() => setTab('summaries')} className={`flex-1 py-3 text-sm font-medium transition-colors text-center ${tab === 'summaries' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-gray-400'}`}>
           <FileText className="w-4 h-4 inline ml-1" />
           סיכומי יום
         </button>
       </div>
 
-      <div className="p-4 max-w-2xl mx-auto space-y-4">
-        {error && <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-2 rounded-lg text-sm">{error}</div>}
+      <div className="p-4 max-w-2xl mx-auto space-y-4 pt-4">
+        {error && <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-2 rounded-lg text-sm break-words">{error}</div>}
 
         {/* Shifts Tab */}
         {tab === 'shifts' && (
@@ -167,19 +167,19 @@ export default function ChatterPortal() {
                 {shifts.map((s) => {
                   const st = statusMap[s.status] || statusMap.pending;
                   return (
-                    <div key={s._id} className="bg-gray-900 border border-gray-800 rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-white font-medium">{formatDate(s.date)}</span>
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${st.cls}`}>{st.label}</span>
+                    <div key={s._id} className="bg-gray-900 border border-gray-800 rounded-lg p-4 min-w-0">
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <span className="text-white font-medium truncate">{formatDate(s.date)}</span>
+                        <span className={`text-xs px-2 py-0.5 rounded-full whitespace-nowrap shrink-0 ${st.cls}`}>{st.label}</span>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-gray-400">
-                        <Clock className="w-3.5 h-3.5" />
+                        <Clock className="w-3.5 h-3.5 shrink-0" />
                         <span>{s.startTime} - {s.endTime}</span>
                       </div>
                       {(s.assignments || []).length > 0 && (
                         <div className="mt-2 flex flex-wrap gap-1">
                           {s.assignments.map((a, i) => (
-                            <span key={i} className="bg-gray-800 text-gray-300 text-xs px-2 py-0.5 rounded">
+                            <span key={i} className="bg-gray-800 text-gray-300 text-xs px-2 py-0.5 rounded truncate max-w-[200px]">
                               {a.modelName} · {a.platform === 'telegram' ? 'טלגרם' : 'אונלי'}
                             </span>
                           ))}
@@ -211,16 +211,16 @@ export default function ChatterPortal() {
             ) : (
               <div className="space-y-2">
                 {summaries.map((s) => (
-                  <div key={s._id} className="bg-gray-900 border border-gray-800 rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
+                  <div key={s._id} className="bg-gray-900 border border-gray-800 rounded-lg p-4 min-w-0">
+                    <div className="flex items-center justify-between gap-2 mb-2">
                       <span className="text-white font-medium">{formatDate(s.date)}</span>
-                      <span className="text-green-400 font-bold">${(s.incomeTotal || 0).toLocaleString()}</span>
+                      <span className="text-green-400 font-bold whitespace-nowrap">${(s.incomeTotal || 0).toLocaleString()}</span>
                     </div>
-                    <div className="grid grid-cols-4 gap-2 text-xs text-gray-400">
-                      <div>טלגרם: ${s.incomeTelegram || 0}</div>
-                      <div>אונלי: ${s.incomeOnlyfans || 0}</div>
-                      <div>העברות: ${s.incomeTransfers || 0}</div>
-                      <div>אחר: ${s.incomeOther || 0}</div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-gray-400">
+                      <div className="whitespace-nowrap">טלגרם: ${s.incomeTelegram || 0}</div>
+                      <div className="whitespace-nowrap">אונלי: ${s.incomeOnlyfans || 0}</div>
+                      <div className="whitespace-nowrap">העברות: ${s.incomeTransfers || 0}</div>
+                      <div className="whitespace-nowrap">אחר: ${s.incomeOther || 0}</div>
                     </div>
                   </div>
                 ))}
@@ -232,8 +232,8 @@ export default function ChatterPortal() {
 
       {/* Request Shift Modal */}
       {showRequest && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setShowRequest(false)}>
-          <div className="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-sm p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-2 sm:p-4" onClick={() => setShowRequest(false)}>
+          <div className="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-sm max-h-[85vh] overflow-y-auto p-5 sm:p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-lg font-bold text-white">בקשת משמרת</h2>
             <form onSubmit={handleRequestShift} className="space-y-3">
               <div>
@@ -266,8 +266,8 @@ export default function ChatterPortal() {
 
       {/* Submit Summary Modal */}
       {showSummary && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setShowSummary(false)}>
-          <div className="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-sm p-6 space-y-4 max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-2 sm:p-4" onClick={() => setShowSummary(false)}>
+          <div className="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-sm p-5 sm:p-6 space-y-4 max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-lg font-bold text-white">סיכום יום</h2>
             <form onSubmit={handleSubmitSummary} className="space-y-3">
               <div className="grid grid-cols-2 gap-3">

@@ -142,25 +142,25 @@ export default function Chatters() {
             <table className="w-full text-right">
               <thead>
                 <tr className="bg-gray-800/50 text-gray-400 text-sm">
-                  <th className="py-3 px-4 font-medium">שם</th>
-                  <th className="py-3 px-4 font-medium">טלפון</th>
-                  <th className="py-3 px-4 font-medium">כניסה אחרונה לאפליקציה</th>
-                  <th className="py-3 px-4 font-medium">TIER</th>
-                  <th className="py-3 px-4 font-medium">לינק אישי</th>
-                  <th className="py-3 px-4 font-medium">פעולות</th>
+                  <th className="py-3 px-4 font-medium whitespace-nowrap">שם</th>
+                  <th className="py-3 px-4 font-medium whitespace-nowrap">טלפון</th>
+                  <th className="py-3 px-4 font-medium whitespace-nowrap">כניסה אחרונה לאפליקציה</th>
+                  <th className="py-3 px-4 font-medium whitespace-nowrap">TIER</th>
+                  <th className="py-3 px-4 font-medium whitespace-nowrap">לינק אישי</th>
+                  <th className="py-3 px-4 font-medium whitespace-nowrap">פעולות</th>
                 </tr>
               </thead>
               <tbody>
                 {chatters.map((c) => (
                   <tr key={c._id} className="border-b border-gray-800 hover:bg-gray-800/30">
-                    <td className="py-3 px-4 text-white font-medium">{c.name}</td>
-                    <td className="py-3 px-4 text-gray-300">{c.phone || '—'}</td>
-                    <td className="py-3 px-4 text-gray-400 text-sm">{formatLastLogin(c.lastSignInAt)}</td>
+                    <td className="py-3 px-4 text-white font-medium whitespace-nowrap">{c.name}</td>
+                    <td className="py-3 px-4 text-gray-300 whitespace-nowrap">{c.phone || '—'}</td>
+                    <td className="py-3 px-4 text-gray-400 text-sm whitespace-nowrap">{formatLastLogin(c.lastSignInAt)}</td>
                     <td className="py-3 px-4">
                       <select
                         value={c.tier || 'אוטומטי'}
                         onChange={(e) => handleTierChange(c._id, e.target.value)}
-                        className="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-blue-500"
+                        className="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-blue-500 min-w-[100px]"
                       >
                         {TIER_OPTIONS.map((t) => <option key={t} value={t}>{t}</option>)}
                       </select>
@@ -168,16 +168,16 @@ export default function Chatters() {
                     <td className="py-3 px-4">
                       <button
                         onClick={() => copyLink(c)}
-                        className="bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-1 rounded text-sm transition-colors flex items-center gap-1"
+                        className="bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-1 rounded text-sm transition-colors flex items-center gap-1 whitespace-nowrap"
                       >
-                        {copiedId === c._id ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
+                        {copiedId === c._id ? <Check className="w-3 h-3 text-green-500 shrink-0" /> : <Copy className="w-3 h-3 shrink-0" />}
                         {copiedId === c._id ? 'הועתק!' : 'העתק קישור'}
                       </button>
                     </td>
-                    <td className="py-3 px-4">
+                    <td className="py-3 px-4 text-center">
                       <button
                         onClick={() => handleDelete(c._id)}
-                        className="text-red-500 hover:text-red-400 p-1 transition-colors"
+                        className="text-red-500 hover:text-red-400 p-1 transition-colors inline-flex"
                         title="מחק"
                       >
                         <Trash2 className="w-4 h-4" />

@@ -101,21 +101,21 @@ export default function Models() {
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setFilterPlatform(filterPlatform === 'telegram' ? null : 'telegram')}
-            className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${filterPlatform === 'telegram' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}
+            className={`px-3 py-1.5 rounded-lg text-sm transition-colors whitespace-nowrap ${filterPlatform === 'telegram' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}
           >
             טלגרם
           </button>
           <button
             onClick={() => setFilterPlatform(filterPlatform === 'onlyfans' ? null : 'onlyfans')}
-            className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${filterPlatform === 'onlyfans' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}
+            className={`px-3 py-1.5 rounded-lg text-sm transition-colors whitespace-nowrap ${filterPlatform === 'onlyfans' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}
           >
             אונלי
           </button>
           <button
             onClick={() => setShowAddForm(!showAddForm)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-sm transition-colors flex items-center gap-1"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-sm transition-colors flex items-center gap-1 whitespace-nowrap"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-4 h-4 shrink-0" />
             הוסף מיוצגת
           </button>
           <div className="relative">
@@ -169,12 +169,12 @@ export default function Models() {
             const platforms = [model.telegram && 'טלגרם', model.onlyfans && 'אונלי'].filter(Boolean).join(' + ');
             return (
               <div key={model._id} className={`bg-gray-900 rounded-lg p-4 flex flex-wrap items-center justify-between gap-3 ${model.active === false ? 'opacity-50' : ''}`}>
-                <div>
-                  <p className="text-white font-bold">{model.name}</p>
-                  <p className="text-sm text-gray-400">פלטפורמות: {platforms || 'ללא'}</p>
+                <div className="min-w-0">
+                  <p className="text-white font-bold truncate">{model.name}</p>
+                  <p className="text-sm text-gray-400 whitespace-nowrap">פלטפורמות: {platforms || 'ללא'}</p>
                 </div>
-                <div className="flex items-center gap-3">
-                  <label className="flex items-center gap-1.5 text-sm text-gray-300 cursor-pointer">
+                <div className="flex items-center gap-3 shrink-0">
+                  <label className="flex items-center gap-1.5 text-sm text-gray-300 cursor-pointer whitespace-nowrap">
                     <input
                       type="checkbox"
                       checked={!!model.telegram}
@@ -183,7 +183,7 @@ export default function Models() {
                     />
                     טלגרם
                   </label>
-                  <label className="flex items-center gap-1.5 text-sm text-gray-300 cursor-pointer">
+                  <label className="flex items-center gap-1.5 text-sm text-gray-300 cursor-pointer whitespace-nowrap">
                     <input
                       type="checkbox"
                       checked={!!model.onlyfans}
@@ -194,14 +194,14 @@ export default function Models() {
                   </label>
                   <button
                     onClick={() => handleToggleActive(model)}
-                    className="text-gray-400 hover:text-white p-1 transition-colors"
+                    className="text-gray-400 hover:text-white p-1.5 transition-colors"
                     title={model.active === false ? 'הפעל' : 'השבת'}
                   >
                     {model.active === false ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                   <button
                     onClick={() => handleDelete(model._id)}
-                    className="text-red-500 hover:text-red-400 p-1 transition-colors"
+                    className="text-red-500 hover:text-red-400 p-1.5 transition-colors"
                     title="מחק"
                   >
                     <Trash2 className="w-4 h-4" />

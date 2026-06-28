@@ -96,7 +96,7 @@ export default function Analytics() {
   const goalProgress = [];
 
   return (
-    <div className="space-y-6" dir="rtl">
+    <div className="space-y-6 p-4 lg:p-6 min-w-0" dir="rtl">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-bold text-white">אנליטיקס</h1>
@@ -108,7 +108,7 @@ export default function Analytics() {
         <button
           onClick={handleRefresh}
           disabled={refreshing}
-          className="bg-gray-800 hover:bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm transition-colors disabled:opacity-50 flex items-center gap-2"
+          className="bg-gray-800 hover:bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm transition-colors disabled:opacity-50 flex items-center gap-2 shrink-0"
         >
           <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
           רענן
@@ -120,19 +120,19 @@ export default function Analytics() {
           <button
             key={r.key}
             onClick={() => r.key !== 'custom' && setActiveRange(r.key)}
-            className={`px-4 py-2 rounded-lg text-sm transition-colors ${activeRange === r.key ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}
+            className={`px-4 py-2 rounded-lg text-sm transition-colors whitespace-nowrap ${activeRange === r.key ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}
           >
             {r.label}
           </button>
         ))}
       </div>
 
-      <div className="flex gap-1 bg-gray-900 rounded-lg p-1">
+      <div className="flex gap-1 bg-gray-900 rounded-lg p-1 overflow-x-auto">
         {TABS.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`flex-1 px-4 py-2 rounded-lg text-sm transition-colors ${activeTab === tab.key ? 'bg-gray-800 text-white' : 'text-gray-400 hover:text-gray-300'}`}
+            className={`flex-1 min-w-0 px-4 py-2 rounded-lg text-sm transition-colors whitespace-nowrap ${activeTab === tab.key ? 'bg-gray-800 text-white' : 'text-gray-400 hover:text-gray-300'}`}
           >
             {tab.label}
           </button>
@@ -179,19 +179,19 @@ export default function Analytics() {
               <table className="w-full text-right">
                 <thead>
                   <tr className="bg-gray-800/50 text-gray-400 text-sm">
-                    <th className="py-3 px-4 font-medium">צ׳אטר</th>
-                    <th className="py-3 px-4 font-medium">הכנסה כוללת</th>
-                    <th className="py-3 px-4 font-medium">משמרות</th>
-                    <th className="py-3 px-4 font-medium">ממוצע למשמרת</th>
+                    <th className="py-3 px-4 font-medium whitespace-nowrap">צ׳אטר</th>
+                    <th className="py-3 px-4 font-medium whitespace-nowrap">הכנסה כוללת</th>
+                    <th className="py-3 px-4 font-medium whitespace-nowrap">משמרות</th>
+                    <th className="py-3 px-4 font-medium whitespace-nowrap">ממוצע למשמרת</th>
                   </tr>
                 </thead>
                 <tbody>
                   {chatterIncomes.map((c, i) => (
                     <tr key={i} className="border-b border-gray-800 hover:bg-gray-800/30">
-                      <td className="py-3 px-4 text-white font-medium">{c.chatterName}</td>
-                      <td className="py-3 px-4 text-green-400 font-bold">${(c.totalIncome || 0).toLocaleString()}</td>
-                      <td className="py-3 px-4 text-gray-300">—</td>
-                      <td className="py-3 px-4 text-gray-300">—</td>
+                      <td className="py-3 px-4 text-white font-medium whitespace-nowrap">{c.chatterName}</td>
+                      <td className="py-3 px-4 text-green-400 font-bold whitespace-nowrap">${(c.totalIncome || 0).toLocaleString()}</td>
+                      <td className="py-3 px-4 text-gray-300 whitespace-nowrap">—</td>
+                      <td className="py-3 px-4 text-gray-300 whitespace-nowrap">—</td>
                     </tr>
                   ))}
                 </tbody>
@@ -202,7 +202,7 @@ export default function Analytics() {
       )}
 
       {activeTab === 'platforms' && (
-        <div className="bg-gray-900 rounded-xl p-6 space-y-4">
+        <div className="bg-gray-900 rounded-xl p-6 space-y-4 min-w-0">
           <h3 className="text-white font-bold">פילוח לפי פלטפורמה</h3>
           {Object.keys(platformData).length === 0 ? (
             <p className="text-gray-500 text-center py-8">אין נתוני פלטפורמות</p>
@@ -212,10 +212,10 @@ export default function Analytics() {
               const pct = Math.round(((amount || 0) / total) * 100);
               const label = platform === 'telegram' ? 'טלגרם' : platform === 'onlyfans' ? 'אונליפאנס' : 'העברות';
               return (
-                <div key={platform}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-white text-sm">{label}</span>
-                    <span className="text-gray-400 text-sm">${(amount || 0).toLocaleString()} ({pct}%)</span>
+                <div key={platform} className="min-w-0">
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <span className="text-white text-sm truncate">{label}</span>
+                    <span className="text-gray-400 text-sm whitespace-nowrap shrink-0">${(amount || 0).toLocaleString()} ({pct}%)</span>
                   </div>
                   <div className="w-full bg-gray-800 rounded-full h-3">
                     <div
@@ -231,7 +231,7 @@ export default function Analytics() {
       )}
 
       {activeTab === 'goals' && (
-        <div className="bg-gray-900 rounded-xl p-6 space-y-4">
+        <div className="bg-gray-900 rounded-xl p-6 space-y-4 min-w-0">
           <h3 className="text-white font-bold">התקדמות יעדים חודשיים</h3>
           {goalProgress.length === 0 ? (
             <p className="text-gray-500 text-center py-8">אין נתוני יעדים</p>
@@ -239,10 +239,10 @@ export default function Analytics() {
             goalProgress.map((g, i) => {
               const pct = g.goal_amount ? Math.min(100, Math.round((g.current || 0) / g.goal_amount * 100)) : 0;
               return (
-                <div key={i}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-white text-sm">{g.chatterName || g.name}</span>
-                    <span className="text-gray-400 text-sm">${(g.current || 0).toLocaleString()} / ${(g.goal_amount || 0).toLocaleString()} ({pct}%)</span>
+                <div key={i} className="min-w-0">
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <span className="text-white text-sm truncate">{g.chatterName || g.name}</span>
+                    <span className="text-gray-400 text-sm whitespace-nowrap shrink-0">${(g.current || 0).toLocaleString()} / ${(g.goal_amount || 0).toLocaleString()} ({pct}%)</span>
                   </div>
                   <div className="w-full bg-gray-800 rounded-full h-3">
                     <div

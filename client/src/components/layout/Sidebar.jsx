@@ -26,13 +26,13 @@ export default function Sidebar({ activePage, onNavigate, pendingCount = 0 }) {
   const { user, logout } = useAuth();
 
   return (
-    <aside className="hidden lg:flex lg:flex-col w-64 bg-gray-900 border-l border-gray-800 h-full order-first">
-      <div className="p-6 border-b border-gray-800">
+    <aside className="hidden lg:flex lg:flex-col w-64 shrink-0 bg-gray-900 border-l border-gray-800 h-full order-first">
+      <div className="shrink-0 p-6 border-b border-gray-800">
         <h1 className="text-xl font-bold text-white">ShiftPro</h1>
         <p className="text-sm text-gray-400 mt-1">ניהול משמרות</p>
       </div>
 
-      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+      <nav className="flex-1 p-4 space-y-1 overflow-y-auto min-h-0">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activePage === item.id;
@@ -46,10 +46,10 @@ export default function Sidebar({ activePage, onNavigate, pendingCount = 0 }) {
                   : 'text-gray-400 hover:text-white hover:bg-gray-800'
               }`}
             >
-              <Icon size={20} />
-              <span>{item.label}</span>
+              <Icon size={20} className="shrink-0" />
+              <span className="truncate">{item.label}</span>
               {item.hasBadge && pendingCount > 0 && (
-                <span className="mr-auto bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                <span className="ms-auto shrink-0 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
                   {pendingCount}
                 </span>
               )}
@@ -58,14 +58,14 @@ export default function Sidebar({ activePage, onNavigate, pendingCount = 0 }) {
         })}
       </nav>
 
-      <div className="p-4 border-t border-gray-800">
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-gray-300 truncate">
+      <div className="shrink-0 p-4 border-t border-gray-800">
+        <div className="flex items-center justify-between gap-2 min-w-0">
+          <span className="text-sm text-gray-300 truncate min-w-0">
             {user?.name || user?.email || 'משתמש'}
           </span>
           <button
             onClick={logout}
-            className="text-gray-400 hover:text-red-400 transition-colors"
+            className="shrink-0 text-gray-400 hover:text-red-400 transition-colors"
             title="התנתק"
           >
             <LogOut size={18} />

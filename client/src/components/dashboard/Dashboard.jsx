@@ -123,9 +123,9 @@ export default function Dashboard() {
     <div className="space-y-6" dir="rtl">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {kpis.map((kpi) => (
-          <div key={kpi.label} className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex items-start justify-between">
+          <div key={kpi.label} className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex items-start justify-between overflow-hidden min-w-0">
             <div>
-              <p className="text-3xl font-bold text-white">{kpi.value}</p>
+              <p className="text-3xl font-bold text-white whitespace-nowrap">{kpi.value}</p>
               <p className="text-sm text-gray-400 mt-1">{kpi.label}</p>
             </div>
             <div className="flex flex-col items-end gap-2">
@@ -151,7 +151,7 @@ export default function Dashboard() {
             placeholder="שם המיוצגת"
             className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
           />
-          <div className="flex gap-6">
+          <div className="flex flex-wrap gap-x-6 gap-y-2">
             <label className="flex items-center gap-2 text-gray-300 cursor-pointer">
               <input type="checkbox" checked={telegram} onChange={(e) => setTelegram(e.target.checked)} className="rounded bg-gray-700 border-gray-600" />
               טלגרם
@@ -164,21 +164,21 @@ export default function Dashboard() {
           <button
             type="submit"
             disabled={submitting || !modelName.trim()}
-            className="w-full bg-gray-800 hover:bg-gray-700 text-white py-2 rounded-lg transition-colors disabled:opacity-50"
+            className="w-full bg-gray-800 hover:bg-gray-700 text-white py-2 rounded-lg transition-colors disabled:opacity-50 flex items-center justify-center gap-2 font-medium"
           >
-            <Plus className="w-4 h-4 inline-block ml-2" />
+            <Plus className="w-4 h-4 shrink-0" />
             הוסף מיוצגת
           </button>
         </form>
       </div>
 
       <div className="bg-gray-900 rounded-xl p-6">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between flex-wrap gap-2 mb-4">
           <h2 className="text-lg font-bold text-white">יעדים חודשיים</h2>
           <button
             onClick={handleCopyGoals}
             disabled={copyingGoals}
-            className="bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
+            className="bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm px-4 py-2 rounded-lg transition-colors disabled:opacity-50 whitespace-nowrap"
           >
             {copyingGoals ? 'מעתיק...' : 'העתק יעדים מחודש קודם'}
           </button>
@@ -190,30 +190,30 @@ export default function Dashboard() {
             <table className="w-full text-right">
               <thead>
                 <tr className="border-b border-gray-800 text-gray-400 text-sm">
-                  <th className="py-3 px-4 font-medium">צ׳אטר</th>
-                  <th className="py-3 px-4 font-medium">יעד חודשי ($)</th>
-                  <th className="py-3 px-4 font-medium">פעולה</th>
+                  <th className="py-3 px-4 font-medium whitespace-nowrap">צ׳אטר</th>
+                  <th className="py-3 px-4 font-medium whitespace-nowrap">יעד חודשי ($)</th>
+                  <th className="py-3 px-4 font-medium whitespace-nowrap">פעולה</th>
                 </tr>
               </thead>
               <tbody>
                 {goals.map((goal) => (
                   <tr key={goal._id} className="border-b border-gray-800 hover:bg-gray-800/50">
-                    <td className="py-3 px-4 text-white">{goal.chatterId?.name || goal.chatter_name || '—'}</td>
-                    <td className="py-3 px-4 text-white">
+                    <td className="py-3 px-4 text-white whitespace-nowrap">{goal.chatterId?.name || goal.chatter_name || '—'}</td>
+                    <td className="py-3 px-4 text-white whitespace-nowrap min-w-[8rem]">
                       {editingGoalId === goal._id ? (
                         <input
                           type="number"
                           value={editGoalValue}
                           onChange={(e) => setEditGoalValue(e.target.value)}
                           onKeyDown={(e) => e.key === 'Enter' && handleSaveGoal(goal)}
-                          className="bg-gray-800 border border-gray-600 rounded px-3 py-1 text-white w-32 focus:outline-none focus:border-blue-500"
+                          className="bg-gray-800 border border-gray-600 rounded-lg px-3 py-1 text-white w-full max-w-[8rem] focus:outline-none focus:border-blue-500"
                           autoFocus
                         />
                       ) : (
                         formatCurrency(goal.goal_amount)
                       )}
                     </td>
-                    <td className="py-3 px-4">
+                    <td className="py-3 px-4 whitespace-nowrap">
                       {editingGoalId === goal._id ? (
                         <div className="flex gap-2">
                           <button onClick={() => handleSaveGoal(goal)} className="text-green-500 hover:text-green-400 text-sm">שמור</button>

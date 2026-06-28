@@ -101,15 +101,15 @@ export default function ShiftApproval() {
             {chatterShifts.map((shift) => (
               <div key={shift._id} className="bg-gray-900 border border-gray-800 rounded-xl p-4">
                 <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-white font-medium">{formatShiftDate(shift.date)}</p>
                     <p className="text-sm text-gray-400">{formatTime(shift.startTime)} - {formatTime(shift.endTime)}</p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 shrink-0">
                     <button
                       onClick={() => handleApprove(shift._id)}
                       disabled={actionLoading === shift._id}
-                      className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition-colors disabled:opacity-50 flex items-center gap-1"
+                      className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5 min-w-[5rem] whitespace-nowrap"
                     >
                       <CheckCircle className="w-4 h-4" />
                       אשר
@@ -117,7 +117,7 @@ export default function ShiftApproval() {
                     <button
                       onClick={() => handleReject(shift._id)}
                       disabled={actionLoading === shift._id}
-                      className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition-colors disabled:opacity-50 flex items-center gap-1"
+                      className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5 min-w-[5rem] whitespace-nowrap"
                     >
                       <XCircle className="w-4 h-4" />
                       דחה
@@ -130,16 +130,16 @@ export default function ShiftApproval() {
                     <table className="w-full text-right text-sm">
                       <thead>
                         <tr className="border-b border-gray-800 text-gray-400">
-                          <th className="py-2 px-3 font-medium">מיוצגת</th>
-                          <th className="py-2 px-3 font-medium">פלטפורמה</th>
-                          <th className="py-2 px-3 font-medium">סטטוס</th>
+                          <th className="py-2 px-3 font-medium whitespace-nowrap">מיוצגת</th>
+                          <th className="py-2 px-3 font-medium whitespace-nowrap">פלטפורמה</th>
+                          <th className="py-2 px-3 font-medium whitespace-nowrap">סטטוס</th>
                         </tr>
                       </thead>
                       <tbody>
                         {shift.assignments.map((a, i) => (
                           <tr key={i} className="border-b border-gray-800/50">
-                            <td className="py-2 px-3 text-white">{a.modelName || a.model?.name}</td>
-                            <td className="py-2 px-3 text-gray-300">{a.platform === 'telegram' ? 'טלגרם' : 'אונליפאנס'}</td>
+                            <td className="py-2 px-3 text-white whitespace-nowrap">{a.modelName || a.model?.name}</td>
+                            <td className="py-2 px-3 text-gray-300 whitespace-nowrap">{a.platform === 'telegram' ? 'טלגרם' : 'אונליפאנס'}</td>
                             <td className="py-2 px-3">
                               <CheckCircle className="w-4 h-4 text-green-500" />
                             </td>

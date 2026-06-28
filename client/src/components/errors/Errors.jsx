@@ -63,20 +63,20 @@ export default function Errors() {
           <h1 className="text-2xl font-bold text-white">שגיאות</h1>
           <p className="text-gray-400 text-sm mt-1">לוג שגיאות מהמערכת</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={() => setShowOpen(!showOpen)}
-            className={`px-4 py-2 rounded-lg text-sm transition-colors flex items-center gap-2 ${showOpen ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}
+            className={`px-4 py-2 rounded-lg text-sm transition-colors flex items-center gap-2 whitespace-nowrap ${showOpen ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}
           >
-            <Filter className="w-4 h-4" />
+            <Filter className="w-4 h-4 shrink-0" />
             שגיאות פתוחות
           </button>
           <button
             onClick={handleRefresh}
             disabled={refreshing}
-            className="bg-gray-800 hover:bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm transition-colors disabled:opacity-50 flex items-center gap-2"
+            className="bg-gray-800 hover:bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm transition-colors disabled:opacity-50 flex items-center gap-2 whitespace-nowrap"
           >
-            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-4 h-4 shrink-0 ${refreshing ? 'animate-spin' : ''}`} />
             רענן
           </button>
         </div>
@@ -93,18 +93,18 @@ export default function Errors() {
           {errors.map((err) => (
             <div key={err._id} className="bg-gray-900 border border-gray-800 rounded-xl p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="flex items-start gap-3">
+                <div className="flex items-start gap-3 min-w-0 flex-1">
                   <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-white font-medium">{err.message}</p>
-                    {err.source && <p className="text-sm text-gray-400 mt-1">מקור: {err.source}</p>}
-                    <p className="text-xs text-gray-500 mt-1">{formatTimestamp(err.createdAt || err.timestamp)}</p>
+                  <div className="min-w-0">
+                    <p className="text-white font-medium break-words">{err.message}</p>
+                    {err.source && <p className="text-sm text-gray-400 mt-1 break-words">מקור: {err.source}</p>}
+                    <p className="text-xs text-gray-500 mt-1 whitespace-nowrap">{formatTimestamp(err.createdAt || err.timestamp)}</p>
                   </div>
                 </div>
                 {!err.resolved && (
                   <button
                     onClick={() => handleResolve(err._id)}
-                    className="bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-1.5 rounded-lg text-sm transition-colors whitespace-nowrap"
+                    className="bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-1.5 rounded-lg text-sm transition-colors whitespace-nowrap shrink-0"
                   >
                     סמן כפתור
                   </button>

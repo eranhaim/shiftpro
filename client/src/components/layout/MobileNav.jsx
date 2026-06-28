@@ -17,7 +17,7 @@ const mobileNavItems = [
 export default function MobileNav({ activePage, onNavigate }) {
   return (
     <nav className="lg:hidden fixed bottom-0 inset-x-0 bg-gray-900 border-t border-gray-800 z-50">
-      <div className="flex items-center justify-around py-2">
+      <div className="flex items-center justify-around py-2 px-1">
         {mobileNavItems.map((item) => {
           const Icon = item.icon;
           const isActive = activePage === item.id;
@@ -25,12 +25,12 @@ export default function MobileNav({ activePage, onNavigate }) {
             <button
               key={item.id}
               onClick={() => onNavigate(item.id)}
-              className={`flex flex-col items-center gap-0.5 px-2 py-1 text-xs transition-colors ${
+              className={`flex flex-col items-center gap-0.5 min-w-0 px-1 py-1 text-xs transition-colors ${
                 isActive ? 'text-blue-400' : 'text-gray-500'
               }`}
             >
-              <Icon size={20} />
-              <span>{item.label}</span>
+              <Icon size={20} className="shrink-0" />
+              <span className="truncate max-w-full">{item.label}</span>
             </button>
           );
         })}

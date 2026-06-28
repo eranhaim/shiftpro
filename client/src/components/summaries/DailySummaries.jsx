@@ -239,19 +239,19 @@ export default function DailySummaries() {
       </div>
 
       {/* Date Filter */}
-      <div className="bg-gray-900 rounded-xl p-4 flex flex-wrap items-end gap-3">
-        <Filter className="w-5 h-5 text-gray-400" />
-        <div>
+      <div className="bg-gray-900 rounded-xl p-4 flex flex-wrap items-end gap-3 min-w-0">
+        <Filter className="w-5 h-5 text-gray-400 shrink-0" />
+        <div className="min-w-0">
           <label className="text-xs text-gray-400 block mb-1">מתאריך</label>
-          <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500" />
+          <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full max-w-[160px] bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500" />
         </div>
-        <div>
+        <div className="min-w-0">
           <label className="text-xs text-gray-400 block mb-1">עד תאריך</label>
-          <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500" />
+          <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full max-w-[160px] bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500" />
         </div>
-        <button onClick={handleFilter} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-lg text-sm transition-colors">סנן</button>
+        <button onClick={handleFilter} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-lg text-sm transition-colors shrink-0">סנן</button>
         {filterActive && (
-          <button onClick={clearFilter} className="text-gray-400 hover:text-white text-sm flex items-center gap-1 transition-colors">
+          <button onClick={clearFilter} className="text-gray-400 hover:text-white text-sm flex items-center gap-1 transition-colors shrink-0">
             <X className="w-3 h-3" />
             נקה
           </button>
@@ -275,9 +275,9 @@ export default function DailySummaries() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {debts.slice(0, 12).map((debt, i) => (
-              <div key={debt._id || i} className="bg-gray-800 border border-gray-700 rounded-lg p-4">
-                <div className="flex items-start justify-between mb-2">
-                  <p className="font-bold text-white">{debt.chatterId?.name || 'לא ידוע'}</p>
+              <div key={debt._id || i} className="bg-gray-800 border border-gray-700 rounded-lg p-4 min-w-0">
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <p className="font-bold text-white truncate">{debt.chatterId?.name || 'לא ידוע'}</p>
                   <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
                 </div>
                 <p className="text-sm text-gray-400">{formatDate(debt.date)}</p>
@@ -298,29 +298,29 @@ export default function DailySummaries() {
             <table className="w-full text-right text-sm">
               <thead>
                 <tr className="bg-gray-800/50 text-gray-400">
-                  <th className="py-3 px-4 font-medium">תאריך</th>
-                  <th className="py-3 px-4 font-medium">צ׳אטר</th>
-                  <th className="py-3 px-4 font-medium">משמרת</th>
-                  <th className="py-3 px-4 font-medium">טלגרם</th>
-                  <th className="py-3 px-4 font-medium">אונלי</th>
-                  <th className="py-3 px-4 font-medium">העברות</th>
-                  <th className="py-3 px-4 font-medium">אחר</th>
-                  <th className="py-3 px-4 font-medium">סה"כ</th>
-                  <th className="py-3 px-4 font-medium">פעולות</th>
+                  <th className="py-3 px-4 font-medium whitespace-nowrap">תאריך</th>
+                  <th className="py-3 px-4 font-medium whitespace-nowrap">צ׳אטר</th>
+                  <th className="py-3 px-4 font-medium whitespace-nowrap">משמרת</th>
+                  <th className="py-3 px-4 font-medium whitespace-nowrap">טלגרם</th>
+                  <th className="py-3 px-4 font-medium whitespace-nowrap">אונלי</th>
+                  <th className="py-3 px-4 font-medium whitespace-nowrap">העברות</th>
+                  <th className="py-3 px-4 font-medium whitespace-nowrap">אחר</th>
+                  <th className="py-3 px-4 font-medium whitespace-nowrap">סה"כ</th>
+                  <th className="py-3 px-4 font-medium whitespace-nowrap">פעולות</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-800">
                 {summaries.map((s) => (
                   <tr key={s._id} className="hover:bg-gray-800/30 transition-colors">
-                    <td className="py-2.5 px-4 text-gray-300">{formatDate(s.date)}</td>
-                    <td className="py-2.5 px-4 text-white font-medium">{s.chatterId?.name || 'לא ידוע'}</td>
-                    <td className="py-2.5 px-4 text-gray-400">{s.shiftType || '—'}</td>
-                    <td className="py-2.5 px-4 text-gray-300">${(s.incomeTelegram || 0).toLocaleString()}</td>
-                    <td className="py-2.5 px-4 text-gray-300">${(s.incomeOnlyfans || 0).toLocaleString()}</td>
-                    <td className="py-2.5 px-4 text-gray-300">${(s.incomeTransfers || 0).toLocaleString()}</td>
-                    <td className="py-2.5 px-4 text-gray-300">${(s.incomeOther || 0).toLocaleString()}</td>
-                    <td className="py-2.5 px-4 text-green-400 font-bold">${(s.incomeTotal || 0).toLocaleString()}</td>
-                    <td className="py-2.5 px-4">
+                    <td className="py-2.5 px-4 text-gray-300 whitespace-nowrap">{formatDate(s.date)}</td>
+                    <td className="py-2.5 px-4 text-white font-medium whitespace-nowrap">{s.chatterId?.name || 'לא ידוע'}</td>
+                    <td className="py-2.5 px-4 text-gray-400 whitespace-nowrap">{s.shiftType || '—'}</td>
+                    <td className="py-2.5 px-4 text-gray-300 whitespace-nowrap">${(s.incomeTelegram || 0).toLocaleString()}</td>
+                    <td className="py-2.5 px-4 text-gray-300 whitespace-nowrap">${(s.incomeOnlyfans || 0).toLocaleString()}</td>
+                    <td className="py-2.5 px-4 text-gray-300 whitespace-nowrap">${(s.incomeTransfers || 0).toLocaleString()}</td>
+                    <td className="py-2.5 px-4 text-gray-300 whitespace-nowrap">${(s.incomeOther || 0).toLocaleString()}</td>
+                    <td className="py-2.5 px-4 text-green-400 font-bold whitespace-nowrap">${(s.incomeTotal || 0).toLocaleString()}</td>
+                    <td className="py-2.5 px-4 whitespace-nowrap">
                       <button onClick={() => openEdit(s)} className="text-gray-400 hover:text-blue-400 transition-colors" title="ערוך">
                         <Pencil className="w-4 h-4" />
                       </button>
@@ -345,21 +345,21 @@ export default function DailySummaries() {
       )}
 
       {/* Stats Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-800 px-6 py-3 lg:pr-64 z-30">
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-center gap-6 text-sm" dir="rtl">
-          <div className="text-gray-400">סיכומים <span className="text-white font-bold">{summaries.length}</span></div>
-          <div className="text-gray-400">צ׳אטרים <span className="text-white font-bold">{uniqueChatters}</span></div>
-          <div className="text-gray-400">טלגרם <span className="text-white font-bold">${totalTelegram.toLocaleString()}</span></div>
-          <div className="text-gray-400">אונלי <span className="text-white font-bold">${totalOnlyfans.toLocaleString()}</span></div>
-          <div className="text-gray-400">העברות <span className="text-white font-bold">${totalTransfers.toLocaleString()}</span></div>
-          <div className="text-gray-400">סה"כ <span className="text-green-400 font-bold">${totalIncome.toLocaleString()}</span></div>
+      <div className="fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-800 px-4 sm:px-6 py-3 lg:pr-64 z-30">
+        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-center gap-x-6 gap-y-1 text-sm" dir="rtl">
+          <div className="text-gray-400 whitespace-nowrap">סיכומים <span className="text-white font-bold">{summaries.length}</span></div>
+          <div className="text-gray-400 whitespace-nowrap">צ׳אטרים <span className="text-white font-bold">{uniqueChatters}</span></div>
+          <div className="text-gray-400 whitespace-nowrap">טלגרם <span className="text-white font-bold">${totalTelegram.toLocaleString()}</span></div>
+          <div className="text-gray-400 whitespace-nowrap">אונלי <span className="text-white font-bold">${totalOnlyfans.toLocaleString()}</span></div>
+          <div className="text-gray-400 whitespace-nowrap">העברות <span className="text-white font-bold">${totalTransfers.toLocaleString()}</span></div>
+          <div className="text-gray-400 whitespace-nowrap">סה"כ <span className="text-green-400 font-bold">${totalIncome.toLocaleString()}</span></div>
         </div>
       </div>
 
       {/* Create/Edit Form Modal */}
       {showForm && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={() => setShowForm(false)}>
-          <div className="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-2 sm:p-4" onClick={() => setShowForm(false)}>
+          <div className="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-white">{editingId ? 'ערוך סיכום יום' : 'סיכום יום חדש'}</h2>
               <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-white"><X className="w-5 h-5" /></button>

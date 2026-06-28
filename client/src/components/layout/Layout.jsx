@@ -44,14 +44,14 @@ export default function Layout() {
         pendingCount={pendingCount}
       />
 
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         <MobileHeader onMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)} />
 
-        <div className="hidden lg:flex items-center justify-start sticky top-0 bg-gray-900 border-b border-gray-800 px-6 py-3 z-40">
-          <span className="text-sm text-gray-400">ShiftPro — ניהול משמרות</span>
+        <div className="hidden lg:flex items-center justify-start shrink-0 bg-gray-900 border-b border-gray-800 px-6 py-3 z-40">
+          <span className="text-sm text-gray-400 truncate">ShiftPro — ניהול משמרות</span>
         </div>
 
-        <main className="flex-1 overflow-y-auto bg-gray-950 pt-[52px] pb-[60px] lg:pt-0 lg:pb-0">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden bg-gray-950 pt-[52px] pb-[60px] lg:pt-0 lg:pb-0">
           <PageComponent />
         </main>
 

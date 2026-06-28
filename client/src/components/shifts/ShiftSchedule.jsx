@@ -39,7 +39,7 @@ function getStatusBadge(status) {
     rejected: { label: 'נדחה', cls: 'bg-red-900 text-red-400' },
   };
   const s = map[status] || map.planned;
-  return <span className={`text-xs px-2 py-0.5 rounded-full ${s.cls}`}>{s.label}</span>;
+  return <span className={`text-xs px-2 py-0.5 rounded-full inline-block whitespace-nowrap ${s.cls}`}>{s.label}</span>;
 }
 
 function Spinner() {
@@ -171,13 +171,13 @@ export default function ShiftSchedule() {
     <div className="space-y-6" dir="rtl">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-white">לוח משמרות</h1>
-        <div className="flex gap-2">
-          <button onClick={handleGenerate} disabled={generating} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition-colors disabled:opacity-50 flex items-center gap-2">
-            <Plus className="w-4 h-4" />
+        <div className="flex flex-wrap gap-2">
+          <button onClick={handleGenerate} disabled={generating} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition-colors disabled:opacity-50 flex items-center gap-2 whitespace-nowrap">
+            <Plus className="w-4 h-4 shrink-0" />
             {generating ? 'יוצר...' : 'צור משמרות לשבוע הבא'}
           </button>
-          <button onClick={handleExport} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition-colors flex items-center gap-2">
-            <Download className="w-4 h-4" />
+          <button onClick={handleExport} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition-colors flex items-center gap-2 whitespace-nowrap">
+            <Download className="w-4 h-4 shrink-0" />
             ייצוא משמרות
           </button>
         </div>
@@ -190,76 +190,77 @@ export default function ShiftSchedule() {
         <button onClick={() => navigateWeek(1)} className="text-gray-400 hover:text-white p-1"><ChevronLeft className="w-5 h-5" /></button>
       </div>
 
-      <div className="grid grid-cols-7 gap-2 overflow-x-auto">
-        {days.map((day, idx) => (
-          <div key={idx} className="min-w-[140px]">
-            <button
-              onClick={() => setSelectedDay(day)}
-              className={`w-full text-center p-2 rounded-t-lg transition-colors ${
-                selectedDay && toISODate(selectedDay) === toISODate(day)
-                  ? 'bg-blue-600/20 border-b-2 border-blue-500'
-                  : 'bg-gray-900 hover:bg-gray-800'
-              }`}
-            >
-              <p className="text-white font-medium text-sm">{DAY_NAMES[idx]}</p>
-              <p className="text-gray-400 text-xs">{formatDayDate(day)}</p>
-            </button>
-            {SHIFT_TYPES.map((type) => {
-              const dayShifts = getShiftsForDayType(day, type.key);
-              return (
-                <div key={type.key} className="bg-gray-900 border border-gray-800 p-2 mt-1 rounded-lg min-h-[100px]">
-                  <p className="text-xs text-gray-500 mb-2">{type.label}</p>
-                  {dayShifts.length === 0 ? (
-                    <p className="text-xs text-gray-600 text-center">—</p>
-                  ) : (
-                    dayShifts.map((shift) => (
-                      <div key={shift._id} className="bg-gray-800 border border-gray-700 rounded-lg p-2 mb-1">
-                        <p className="text-sm font-bold text-white">{shift.chatterId?.name || 'צ׳אטר'}</p>
-                        {getStatusBadge(shift.status)}
-                        {(shift.assignments || []).map((a, ai) => (
-                          <p key={ai} className="text-xs text-gray-400 mt-1">
-                            {a.modelName || a.model?.name} - {a.platform === 'telegram' ? 'טלגרם' : 'אונליפאנס'}
-                          </p>
-                        ))}
-                        <p className="text-xs text-gray-500 mt-1">{type.start}-{type.end}</p>
-                      </div>
-                    ))
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        ))}
+      <div className="overflow-x-auto rounded-xl">
+        <div className="grid grid-cols-7 gap-2 min-w-[1020px]">
+          {days.map((day, idx) => (
+            <div key={idx} className="min-w-0">
+              <button
+                onClick={() => setSelectedDay(day)}
+                className={`w-full text-center p-2 rounded-t-lg transition-colors ${
+                  selectedDay && toISODate(selectedDay) === toISODate(day)
+                    ? 'bg-blue-600/20 border-b-2 border-blue-500'
+                    : 'bg-gray-900 hover:bg-gray-800'
+                }`}
+              >
+                <p className="text-white font-medium text-sm">{DAY_NAMES[idx]}</p>
+                <p className="text-gray-400 text-xs">{formatDayDate(day)}</p>
+              </button>
+              {SHIFT_TYPES.map((type) => {
+                const dayShifts = getShiftsForDayType(day, type.key);
+                return (
+                  <div key={type.key} className="bg-gray-900 border border-gray-800 p-2 mt-1 rounded-lg min-h-[100px]">
+                    <p className="text-xs text-gray-500 mb-2 truncate">{type.label}</p>
+                    {dayShifts.length === 0 ? (
+                      <p className="text-xs text-gray-600 text-center">—</p>
+                    ) : (
+                      dayShifts.map((shift) => (
+                        <div key={shift._id} className="bg-gray-800 border border-gray-700 rounded-lg p-2 mb-1 overflow-hidden">
+                          <p className="text-sm font-bold text-white truncate">{shift.chatterId?.name || 'צ׳אטר'}</p>
+                          <div className="mt-1">{getStatusBadge(shift.status)}</div>
+                          {(shift.assignments || []).map((a, ai) => (
+                            <p key={ai} className="text-xs text-gray-400 mt-1 truncate">
+                              {a.modelName || a.model?.name} - {a.platform === 'telegram' ? 'טלגרם' : 'אונליפאנס'}
+                            </p>
+                          ))}
+                          <p className="text-xs text-gray-500 mt-1">{type.start}-{type.end}</p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
       </div>
 
       {selectedDay && (
-        <div className="bg-gray-900 rounded-xl p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-white">כיסוי מיוצגות — {DAY_NAMES[selectedDay.getDay()]} {formatDayDate(selectedDay)}</h2>
-            <span className="text-sm text-gray-400">{coveredModels.size}/{models.length} שיבוצים מלאים</span>
+        <div className="bg-gray-900 rounded-xl p-6 overflow-hidden">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+            <h2 className="text-lg font-bold text-white truncate min-w-0">כיסוי מיוצגות — {DAY_NAMES[selectedDay.getDay()]} {formatDayDate(selectedDay)}</h2>
+            <span className="text-sm text-gray-400 whitespace-nowrap shrink-0">{coveredModels.size}/{models.length} שיבוצים מלאים</span>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full text-right">
+            <table className="w-full text-right min-w-max">
               <thead>
                 <tr className="border-b border-gray-800 text-gray-400 text-sm">
-                  <th className="py-2 px-4 font-medium">מיוצגת</th>
-                  <th className="py-2 px-4 font-medium text-center">טלגרם</th>
-                  <th className="py-2 px-4 font-medium text-center">אונליפאנס</th>
+                  <th className="py-2 px-4 font-medium whitespace-nowrap">מיוצגת</th>
+                  <th className="py-2 px-4 font-medium text-center whitespace-nowrap">טלגרם</th>
+                  <th className="py-2 px-4 font-medium text-center whitespace-nowrap">אונליפאנס</th>
                 </tr>
               </thead>
               <tbody>
                 {models.map((model) => {
-                  const isCovered = coveredModels.has(model._id);
                   const assignments = selectedDayShifts.flatMap((s) => (s.assignments || []).filter((a) => a.modelId === model._id));
                   const hasTelegram = assignments.some((a) => a.platform === 'telegram');
                   const hasOnlyfans = assignments.some((a) => a.platform === 'onlyfans');
                   return (
                     <tr key={model._id} className="border-b border-gray-800">
-                      <td className="py-2 px-4 text-white">{model.name}</td>
-                      <td className="py-2 px-4 text-center">
+                      <td className="py-2 px-4 text-white whitespace-nowrap">{model.name}</td>
+                      <td className="py-2 px-4 text-center whitespace-nowrap">
                         {hasTelegram ? <Check className="w-4 h-4 text-green-500 mx-auto" /> : <span className="text-gray-600">—</span>}
                       </td>
-                      <td className="py-2 px-4 text-center">
+                      <td className="py-2 px-4 text-center whitespace-nowrap">
                         {hasOnlyfans ? <Check className="w-4 h-4 text-green-500 mx-auto" /> : <span className="text-gray-600">—</span>}
                       </td>
                     </tr>

@@ -28,7 +28,7 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gray-950 flex items-center justify-center px-4" dir="rtl">
       <div className="w-full max-w-sm">
         <div className="bg-gray-900 rounded-2xl p-8 shadow-xl border border-gray-800">
           <div className="text-center mb-8">
@@ -41,14 +41,14 @@ export default function Login() {
             <button
               type="button"
               onClick={() => setMode('admin')}
-              className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${mode === 'admin' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
+              className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors text-center ${mode === 'admin' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
             >
               מנהל
             </button>
             <button
               type="button"
               onClick={() => setMode('chatter')}
-              className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${mode === 'chatter' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
+              className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors text-center ${mode === 'chatter' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
             >
               צ׳אטר
             </button>
@@ -62,7 +62,8 @@ export default function Login() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="אימייל"
                 required
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-colors"
+                dir="ltr"
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white text-right placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-colors"
               />
             </div>
             <div>
@@ -72,12 +73,13 @@ export default function Login() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="סיסמה"
                 required
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-colors"
+                dir="ltr"
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white text-right placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-colors"
               />
             </div>
 
             {error && (
-              <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3 text-red-400 text-sm">
+              <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3 text-red-400 text-sm break-words">
                 {error}
               </div>
             )}
