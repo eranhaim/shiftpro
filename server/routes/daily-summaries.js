@@ -17,7 +17,8 @@ router.get('/debts', async (req, res) => {
       .sort({ date: -1 });
 
     const summaryShiftIds = new Set(
-      (await DailySummary.find().select('shiftId')).map((s) => s.shiftId.toString()),
+      (await DailySummary.find({ shiftId: { $ne: null } }).select('shiftId'))
+        .map((s) => s.shiftId.toString()),
     );
 
     const debts = pastShifts.filter((s) => !summaryShiftIds.has(s._id.toString()));

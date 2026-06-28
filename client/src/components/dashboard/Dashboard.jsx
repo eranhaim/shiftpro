@@ -41,16 +41,16 @@ export default function Dashboard() {
     try {
       setLoading(true);
       setError(null);
-      const [overviewData, chattersData, goalsData, debtsData] = await Promise.all([
+      const [overviewData, chattersData, goalsData, debtsData] = await Promise.allSettled([
         getAnalyticsOverview(),
         getChatters(),
         getMonthlyGoals(currentMonth),
         getSummaryDebts(),
       ]);
-      setOverview(overviewData);
-      setChatters(chattersData);
-      setGoals(Array.isArray(goalsData) ? goalsData : []);
-      setDebts(Array.isArray(debtsData) ? debtsData : []);
+      setOverview(overviewData.status === 'fulfilled' ? overviewData.value : null);
+      setChatters(chattersData.status === 'fulfilled' ? chattersData.value : []);
+      setGoals(goalsData.status === 'fulfilled' && Array.isArray(goalsData.value) ? goalsData.value : []);
+      setDebts(debtsData.status === 'fulfilled' && Array.isArray(debtsData.value) ? debtsData.value : []);
     } catch (err) {
       setError(err.message);
     } finally {
