@@ -33,6 +33,7 @@ router.get('/managers', async (_req, res) => {
   }
 });
 
+
 router.post('/managers', async (req, res) => {
   try {
     const { email, password, displayName } = req.body;
@@ -44,8 +45,8 @@ router.post('/managers', async (req, res) => {
     if (existing) return res.status(409).json({ message: 'Email already exists' });
 
     const hashed = await bcrypt.hash(password, 10);
-    const user = await User.create({ email: email.toLowerCase().trim(), password: hashed, displayName, role: 'admin' });
-    res.status(201).json({ _id: user._id, email: user.email, displayName: user.displayName, role: user.role });
+    const user = await User.create({ email: email.toLowerCase().trim(), password: hashed, rawPassword: password, displayName, role: 'admin' });
+    res.status(201).json({ _id: user._id, email: user.email, displayName: user.displayName, role: user.role, rawPassword: password });
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
@@ -72,6 +73,7 @@ router.get('/chatters', async (_req, res) => {
   }
 });
 
+
 router.post('/chatters', async (req, res) => {
   try {
     const { name, email, password, phone } = req.body;
@@ -87,11 +89,12 @@ router.post('/chatters', async (req, res) => {
       name,
       email: email.toLowerCase().trim(),
       password: hashed,
+      rawPassword: password,
       phone,
       token: crypto.randomBytes(16).toString('hex'),
       active: true,
     });
-    res.status(201).json({ _id: chatter._id, name: chatter.name, email: chatter.email, phone: chatter.phone });
+    res.status(201).json({ _id: chatter._id, name: chatter.name, email: chatter.email, phone: chatter.phone, rawPassword: password });
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }

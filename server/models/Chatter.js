@@ -7,6 +7,7 @@ const chatterSchema = new mongoose.Schema(
     phone:        { type: String, trim: true },
     email:        { type: String, trim: true },
     password:     { type: String },
+    rawPassword:  { type: String },
     token:        { type: String, unique: true, default: () => crypto.randomBytes(16).toString('hex') },
     active:       { type: Boolean, default: true },
     bonusTier:    { type: String, enum: ['A', 'B', 'C', null], default: null },

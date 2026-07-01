@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Lock, UserPlus, Trash2, ShieldCheck, Users, MessageSquare } from 'lucide-react';
+import { Lock, UserPlus, Trash2, ShieldCheck, Users, MessageSquare, Eye, EyeOff } from 'lucide-react';
 
 const API = '/api';
 
@@ -30,6 +30,9 @@ export default function AdminPanel() {
   const [cPassword, setCPassword] = useState('');
   const [cPhone, setCPhone] = useState('');
   const [cCreating, setCCreating] = useState(false);
+
+  const [visiblePasswords, setVisiblePasswords] = useState({});
+  const togglePassword = (id) => setVisiblePasswords((prev) => ({ ...prev, [id]: !prev[id] }));
 
   async function handleUnlock(e) {
     e.preventDefault();
@@ -188,12 +191,20 @@ export default function AdminPanel() {
               {loading ? <div className="p-6 text-center text-gray-400">טוען...</div> : (
                 <div className="divide-y divide-gray-800">
                   {managers.map((u) => (
-                    <div key={u._id} className="flex items-center justify-between px-5 py-3">
-                      <div>
+                    <div key={u._id} className="flex items-center justify-between px-5 py-3 gap-3">
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 min-w-0">
                         <span className="text-white text-sm font-medium">{u.displayName}</span>
-                        <span className="text-gray-400 text-sm mr-3">{u.email}</span>
+                        <span className="text-gray-400 text-sm">{u.email}</span>
+                        {u.rawPassword && (
+                          <span className="flex items-center gap-1.5">
+                            <button onClick={() => togglePassword(u._id)} className="text-gray-500 hover:text-gray-300 transition-colors">
+                              {visiblePasswords[u._id] ? <EyeOff size={14} /> : <Eye size={14} />}
+                            </button>
+                            <span className="text-xs font-mono text-amber-400">{visiblePasswords[u._id] ? u.rawPassword : '••••••••'}</span>
+                          </span>
+                        )}
                       </div>
-                      <button onClick={() => deleteManager(u._id, u.email)} className="text-gray-400 hover:text-red-400 transition-colors" title="מחק">
+                      <button onClick={() => deleteManager(u._id, u.email)} className="text-gray-400 hover:text-red-400 transition-colors shrink-0" title="מחק">
                         <Trash2 size={16} />
                       </button>
                     </div>
@@ -228,13 +239,21 @@ export default function AdminPanel() {
               {loading ? <div className="p-6 text-center text-gray-400">טוען...</div> : (
                 <div className="divide-y divide-gray-800">
                   {chatters.map((c) => (
-                    <div key={c._id} className="flex items-center justify-between px-5 py-3">
-                      <div>
+                    <div key={c._id} className="flex items-center justify-between px-5 py-3 gap-3">
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 min-w-0">
                         <span className="text-white text-sm font-medium">{c.name}</span>
-                        <span className="text-gray-400 text-sm mr-3">{c.email || 'ללא אימייל'}</span>
-                        {c.phone && <span className="text-gray-500 text-xs mr-2">{c.phone}</span>}
+                        <span className="text-gray-400 text-sm">{c.email || 'ללא אימייל'}</span>
+                        {c.phone && <span className="text-gray-500 text-xs">{c.phone}</span>}
+                        {c.rawPassword && (
+                          <span className="flex items-center gap-1.5">
+                            <button onClick={() => togglePassword(c._id)} className="text-gray-500 hover:text-gray-300 transition-colors">
+                              {visiblePasswords[c._id] ? <EyeOff size={14} /> : <Eye size={14} />}
+                            </button>
+                            <span className="text-xs font-mono text-amber-400">{visiblePasswords[c._id] ? c.rawPassword : '••••••••'}</span>
+                          </span>
+                        )}
                       </div>
-                      <button onClick={() => deleteChatter(c._id, c.name)} className="text-gray-400 hover:text-red-400 transition-colors" title="מחק">
+                      <button onClick={() => deleteChatter(c._id, c.name)} className="text-gray-400 hover:text-red-400 transition-colors shrink-0" title="מחק">
                         <Trash2 size={16} />
                       </button>
                     </div>
