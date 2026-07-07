@@ -1,0 +1,5 @@
+fastapi
+uvicorn
+pyaileys[qrcode]
+qrcode
+Pillow

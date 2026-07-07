@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ChevronRight, ChevronLeft, Download, Plus, Check } from 'lucide-react';
 import { getShifts, generateWeekShifts, getModels } from '../../services/api.js';
+import ShiftApprovalModal from '../approval/ShiftApprovalModal.jsx';
+import CreateShiftModal from './CreateShiftModal.jsx';
+import exportShiftsExcel from '../../utils/exportShiftsExcel.js';
 
 const DAY_NAMES = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
 
@@ -58,6 +61,8 @@ export default function ShiftSchedule() {
   const [error, setError] = useState(null);
   const [generating, setGenerating] = useState(false);
   const [selectedDay, setSelectedDay] = useState(null);
+  const [selectedShift, setSelectedShift] = useState(null);
+  const [createSlot, setCreateSlot] = useState(null);
 
   const weekEnd = new Date(weekStart);
   weekEnd.setDate(weekEnd.getDate() + 6);
@@ -94,33 +99,7 @@ export default function ShiftSchedule() {
   const goToCurrentWeek = () => setWeekStart(getWeekStart(new Date()));
 
   const handleExport = () => {
-    const headers = ['יום', 'תאריך', 'משמרת', 'צ׳אטר', 'סטטוס', 'מיוצגות'];
-    const rows = [];
-    days.forEach((day, idx) => {
-      SHIFT_TYPES.forEach((type) => {
-        const dayShifts = getShiftsForDayType(day, type.key);
-        dayShifts.forEach((s) => {
-          const models = (s.assignments || []).map((a) => `${a.modelName || a.model?.name || ''} (${a.platform === 'telegram' ? 'טלגרם' : 'אונלי'})`).join(' | ');
-          rows.push([
-            DAY_NAMES[idx],
-            formatDayDate(day),
-            type.label,
-            s.chatterId?.name || '',
-            s.status || '',
-            models,
-          ]);
-        });
-      });
-    });
-    const BOM = '\uFEFF';
-    const csv = BOM + [headers.join(','), ...rows.map((r) => r.map((c) => `"${c}"`).join(','))].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `shifts-${toISODate(weekStart)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    exportShiftsExcel(weekStart, shifts);
   };
 
   const handleGenerate = async () => {
@@ -171,16 +150,10 @@ export default function ShiftSchedule() {
     <div className="space-y-6" dir="rtl">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-white">לוח משמרות</h1>
-        <div className="flex flex-wrap gap-2">
-          <button onClick={handleGenerate} disabled={generating} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition-colors disabled:opacity-50 flex items-center gap-2 whitespace-nowrap">
-            <Plus className="w-4 h-4 shrink-0" />
-            {generating ? 'יוצר...' : 'צור משמרות לשבוע הבא'}
-          </button>
-          <button onClick={handleExport} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition-colors flex items-center gap-2 whitespace-nowrap">
-            <Download className="w-4 h-4 shrink-0" />
-            ייצוא משמרות
-          </button>
-        </div>
+        <button onClick={handleExport} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition-colors flex items-center gap-2 whitespace-nowrap">
+          <Download className="w-4 h-4 shrink-0" />
+          ייצוא משמרות
+        </button>
       </div>
 
       <div className="flex items-center justify-center gap-4">
@@ -208,23 +181,38 @@ export default function ShiftSchedule() {
               {SHIFT_TYPES.map((type) => {
                 const dayShifts = getShiftsForDayType(day, type.key);
                 return (
-                  <div key={type.key} className="bg-gray-900 border border-gray-800 p-2 mt-1 rounded-lg min-h-[100px]">
+                  <div
+                    key={type.key}
+                    className="bg-gray-900 border border-gray-800 p-2 mt-1 rounded-lg min-h-[100px] cursor-pointer hover:border-gray-600 transition-colors"
+                    onClick={() => setCreateSlot({ date: toISODate(day), shiftType: type.key })}
+                  >
                     <p className="text-xs text-gray-500 mb-2 truncate">{type.label}</p>
                     {dayShifts.length === 0 ? (
                       <p className="text-xs text-gray-600 text-center">—</p>
                     ) : (
-                      dayShifts.map((shift) => (
-                        <div key={shift._id} className="bg-gray-800 border border-gray-700 rounded-lg p-2 mb-1 overflow-hidden">
-                          <p className="text-sm font-bold text-white truncate">{shift.chatterId?.name || 'צ׳אטר'}</p>
-                          <div className="mt-1">{getStatusBadge(shift.status)}</div>
-                          {(shift.assignments || []).map((a, ai) => (
-                            <p key={ai} className="text-xs text-gray-400 mt-1 truncate">
-                              {a.modelName || a.model?.name} - {a.platform === 'telegram' ? 'טלגרם' : 'אונליפאנס'}
-                            </p>
-                          ))}
-                          <p className="text-xs text-gray-500 mt-1">{type.start}-{type.end}</p>
-                        </div>
-                      ))
+                      dayShifts.map((shift) => {
+                        const isPending = shift.status === 'pending';
+                        return (
+                          <div
+                            key={shift._id}
+                            onClick={(e) => { e.stopPropagation(); setSelectedShift(shift); }}
+                            className={`rounded-lg p-2 mb-1 overflow-hidden cursor-pointer transition-colors ${
+                              isPending
+                                ? 'bg-yellow-900/20 border-2 border-yellow-500/60 hover:border-yellow-400'
+                                : 'bg-gray-800 border border-gray-700 hover:border-gray-500 hover:bg-gray-750'
+                            }`}
+                          >
+                            <p className="text-sm font-bold text-white truncate">{shift.chatterId?.name || 'צ׳אטר'}</p>
+                            <div className="mt-1">{getStatusBadge(shift.status)}</div>
+                            {(shift.assignments || []).map((a, ai) => (
+                              <p key={ai} className="text-xs text-gray-400 mt-1 truncate">
+                                {a.modelName || a.model?.name} - {a.platform === 'telegram' ? 'טלגרם' : 'אונליפאנס'}
+                              </p>
+                            ))}
+                            <p className="text-xs text-gray-500 mt-1">{type.start}-{type.end}</p>
+                          </div>
+                        );
+                      })
                     )}
                   </div>
                 );
@@ -270,6 +258,37 @@ export default function ShiftSchedule() {
             </table>
           </div>
         </div>
+      )}
+
+      {selectedShift && (
+        <ShiftApprovalModal
+          shift={selectedShift}
+          onClose={() => setSelectedShift(null)}
+          onApproved={() => {
+            setSelectedShift(null);
+            fetchData();
+          }}
+          onRejected={() => {
+            setSelectedShift(null);
+            fetchData();
+          }}
+          onSaved={() => {
+            setSelectedShift(null);
+            fetchData();
+          }}
+        />
+      )}
+
+      {createSlot && (
+        <CreateShiftModal
+          date={createSlot.date}
+          shiftType={createSlot.shiftType}
+          onClose={() => setCreateSlot(null)}
+          onCreated={() => {
+            setCreateSlot(null);
+            fetchData();
+          }}
+        />
       )}
     </div>
   );

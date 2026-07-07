@@ -15,6 +15,7 @@
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
     "mongodb-memory-server": "^11.2.0",
-    "mongoose": "^8.14.1"
+    "mongoose": "^8.14.1",
+    "node-cron": "^4.6.0"
   }
 }

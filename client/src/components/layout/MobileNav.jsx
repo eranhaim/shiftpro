@@ -2,12 +2,9 @@ import { useState } from 'react';
 import {
   LayoutDashboard,
   Calendar,
-  ClipboardCheck,
   FileText,
   Users,
   Database,
-  Bell,
-  MessageCircle,
   TriangleAlert,
   BarChart3,
   MoreHorizontal,
@@ -17,15 +14,12 @@ import {
 const primaryItems = [
   { id: 'dashboard', label: 'בקרה', icon: LayoutDashboard },
   { id: 'shifts', label: 'משמרות', icon: Calendar },
-  { id: 'approval', label: 'אישור', icon: ClipboardCheck },
   { id: 'summaries', label: 'סיכומים', icon: FileText },
   { id: 'chatters', label: 'צ׳אטרים', icon: Users },
 ];
 
 const moreItems = [
   { id: 'models', label: 'מיוצגות', icon: Database },
-  { id: 'reminders', label: 'תזכורות', icon: Bell },
-  { id: 'whatsapp', label: 'WhatsApp', icon: MessageCircle },
   { id: 'errors', label: 'שגיאות', icon: TriangleAlert },
   { id: 'analytics', label: 'אנליטיקס', icon: BarChart3 },
 ];

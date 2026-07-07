@@ -21,6 +21,7 @@ import chatterPortalRoutes from './routes/chatter-portal.js';
 import adminRoutes from './routes/admin.js';
 import remindersRoutes from './routes/reminders.js';
 import whatsappRoutes from './routes/whatsapp.js';
+import { startShiftReminder } from './services/shift-reminder.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -79,7 +80,10 @@ async function start() {
     console.log('Database seeded automatically');
   }
 
-  app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+  app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+    startShiftReminder();
+  });
 }
 
 start().catch((err) => {

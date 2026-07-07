@@ -14,6 +14,7 @@ const shiftSchema = new mongoose.Schema(
     rejectReason: { type: String },
     clockedIn:  { type: Date },
     clockedOut: { type: Date },
+    reminded:   { type: Boolean, default: false },
   },
   { timestamps: true },
 );

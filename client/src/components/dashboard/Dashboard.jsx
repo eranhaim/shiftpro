@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Users, TrendingUp, Calendar, Clock, FileText, Plus } from 'lucide-react';
+import { Users, TrendingUp, Calendar, Clock, FileText, Plus, ClipboardCheck, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { getAnalyticsOverview, getChatters, getMonthlyGoals, getSummaryDebts, createModel, upsertMonthlyGoal, copyMonthlyGoals } from '../../services/api.js';
+import { getAnalyticsOverview, getChatters, getMonthlyGoals, getSummaryDebts, createModel, upsertMonthlyGoal, copyMonthlyGoals, getPendingShifts } from '../../services/api.js';
+import ShiftApprovalModal from '../approval/ShiftApprovalModal.jsx';
 
 function getCurrentMonth() {
   const now = new Date();
@@ -38,20 +39,25 @@ export default function Dashboard({ onNavigate }) {
   const [editGoalValue, setEditGoalValue] = useState('');
   const [copyingGoals, setCopyingGoals] = useState(false);
 
+  const [pendingShifts, setPendingShifts] = useState([]);
+  const [selectedShift, setSelectedShift] = useState(null);
+
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const [overviewData, chattersData, goalsData, debtsData] = await Promise.allSettled([
+      const [overviewData, chattersData, goalsData, debtsData, pendingData] = await Promise.allSettled([
         getAnalyticsOverview(),
         getChatters(),
         getMonthlyGoals(currentMonth),
         getSummaryDebts(),
+        getPendingShifts(),
       ]);
       setOverview(overviewData.status === 'fulfilled' ? overviewData.value : null);
       setChatters(chattersData.status === 'fulfilled' ? chattersData.value : []);
       setGoals(goalsData.status === 'fulfilled' && Array.isArray(goalsData.value) ? goalsData.value : []);
       setDebts(debtsData.status === 'fulfilled' && Array.isArray(debtsData.value) ? debtsData.value : []);
+      setPendingShifts(pendingData.status === 'fulfilled' && Array.isArray(pendingData.value) ? pendingData.value : []);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -118,7 +124,7 @@ export default function Dashboard({ onNavigate }) {
     { label: 'צ׳אטרים', value: chatters.length, icon: Users, page: 'chatters' },
     { label: 'מאושרות היום', value: overview?.shiftsToday ?? 0, icon: TrendingUp, page: 'shifts' },
     { label: 'סה״כ בקשות היום', value: overview?.shiftRequestsToday ?? 0, icon: Calendar, page: 'shifts' },
-    { label: 'ממתינים לאישור', value: overview?.pendingApprovals ?? 0, icon: Clock, badge: 'חדש', badgeColor: 'bg-green-600', page: 'approval' },
+    { label: 'ממתינים לאישור', value: pendingShifts.length, icon: Clock, badge: pendingShifts.length > 0 ? 'חדש' : null, badgeColor: 'bg-green-600', scrollTo: 'pending-shifts' },
     { label: 'חובות סיכום יום', value: debts.length, icon: FileText, badge: 'לבדיקה', badgeColor: 'bg-blue-600', page: 'summaries' },
     { label: 'הושלמו (נתוני עבר)', value: `${overview?.completionRate ?? 0}%`, icon: TrendingUp, page: 'analytics' },
   ];
@@ -129,7 +135,13 @@ export default function Dashboard({ onNavigate }) {
         {kpis.map((kpi) => (
           <button
             key={kpi.label}
-            onClick={() => onNavigate?.(kpi.page)}
+            onClick={() => {
+              if (kpi.scrollTo) {
+                document.getElementById(kpi.scrollTo)?.scrollIntoView({ behavior: 'smooth' });
+              } else if (kpi.page) {
+                onNavigate?.(kpi.page);
+              }
+            }}
             className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex items-start justify-between overflow-hidden min-w-0 text-right hover:border-gray-600 transition-colors cursor-pointer"
           >
             <div>
@@ -147,6 +159,74 @@ export default function Dashboard({ onNavigate }) {
           </button>
         ))}
       </div>
+
+      {/* Pending Shifts Section */}
+      <div id="pending-shifts" className="bg-gray-900 rounded-xl p-6">
+        <div className="flex items-center justify-between flex-wrap gap-2 mb-4">
+          <div className="flex items-center gap-2">
+            <ClipboardCheck className="w-5 h-5 text-yellow-400" />
+            <h2 className="text-lg font-bold text-white">משמרות ממתינות לאישור</h2>
+            {pendingShifts.length > 0 && (
+              <span className="bg-yellow-500 text-black text-xs font-bold px-2 py-0.5 rounded-full">
+                {pendingShifts.length}
+              </span>
+            )}
+          </div>
+        </div>
+        {pendingShifts.length === 0 ? (
+          <div className="text-center py-8">
+            <CheckCircle className="w-10 h-10 text-green-500/50 mx-auto mb-2" />
+            <p className="text-gray-500 text-sm">אין משמרות ממתינות לאישור</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {pendingShifts.map((shift) => {
+              const shiftLabel = shift.startTime === '12:00' ? 'בוקר' : 'לילה';
+              const shiftDate = new Date(shift.date);
+              const dayNames = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'שבת'];
+              return (
+                <button
+                  key={shift._id}
+                  onClick={() => setSelectedShift(shift)}
+                  className="w-full bg-gray-800 border border-gray-700 hover:border-yellow-500/50 rounded-xl p-4 flex items-center justify-between gap-3 transition-all group text-right"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-full bg-yellow-500/10 flex items-center justify-center shrink-0">
+                      <Clock className="w-5 h-5 text-yellow-400" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-white font-medium truncate">{shift.chatterId?.name || 'צ׳אטר'}</p>
+                      <p className="text-xs text-gray-400">
+                        יום {dayNames[shiftDate.getDay()]} {shiftDate.getDate()}.{shiftDate.getMonth() + 1} · {shiftLabel} ({shift.startTime}–{shift.endTime})
+                      </p>
+                    </div>
+                  </div>
+                  <span className="bg-yellow-900/60 text-yellow-400 text-xs px-3 py-1 rounded-full whitespace-nowrap group-hover:bg-yellow-800/60 transition-colors">
+                    ממתין
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {selectedShift && (
+        <ShiftApprovalModal
+          shift={selectedShift}
+          onClose={() => setSelectedShift(null)}
+          onApproved={(id) => {
+            setPendingShifts((prev) => prev.filter((s) => s._id !== id));
+            setSelectedShift(null);
+            fetchData();
+          }}
+          onRejected={(id) => {
+            setPendingShifts((prev) => prev.filter((s) => s._id !== id));
+            setSelectedShift(null);
+            fetchData();
+          }}
+        />
+      )}
 
       <div className="bg-gray-900 rounded-xl p-6">
         <h2 className="text-lg font-bold text-white">הוסף מיוצגת</h2>

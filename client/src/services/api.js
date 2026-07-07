@@ -125,10 +125,11 @@ export async function updateShift(id, data) {
   return res.json();
 }
 
-export async function approveShift(id) {
+export async function approveShift(id, modelAssignments) {
   const res = await fetch(`${API}/shifts/${id}/approve`, {
     method: 'PUT',
     headers: getHeaders(),
+    body: JSON.stringify({ modelAssignments }),
   });
   if (!res.ok) throw new Error('Failed to approve shift');
   return res.json();
@@ -147,6 +148,23 @@ export async function rejectShift(id, rejectReason) {
 export async function getPendingShifts() {
   const res = await fetch(`${API}/shifts/pending`, { headers: getHeaders() });
   if (!res.ok) throw new Error('Failed to fetch pending shifts');
+  return res.json();
+}
+
+export async function getAssignmentsForSlot(date, shiftType) {
+  const params = new URLSearchParams({ date, shiftType });
+  const res = await fetch(`${API}/shifts/assignments-for-slot?${params}`, { headers: getHeaders() });
+  if (!res.ok) throw new Error('Failed to fetch slot assignments');
+  return res.json();
+}
+
+export async function updateShiftAssignments(shiftId, modelAssignments) {
+  const res = await fetch(`${API}/shifts/${shiftId}/assignments`, {
+    method: 'PUT',
+    headers: getHeaders(),
+    body: JSON.stringify({ modelAssignments }),
+  });
+  if (!res.ok) throw new Error('Failed to update shift assignments');
   return res.json();
 }
 
@@ -322,6 +340,47 @@ export async function deleteUser(id, panelPassword) {
     headers: getAdminHeaders(panelPassword),
   });
   if (!res.ok) throw new Error((await res.json()).message || 'Failed to delete user');
+  return res.json();
+}
+
+// WhatsApp
+export async function getWhatsAppStatus() {
+  const res = await fetch(`${API}/whatsapp/status`, { headers: getHeaders() });
+  if (!res.ok) throw new Error('Failed to fetch WhatsApp status');
+  return res.json();
+}
+
+export async function getWhatsAppQR() {
+  const res = await fetch(`${API}/whatsapp/qr`, { headers: getHeaders() });
+  if (!res.ok) throw new Error('Failed to fetch QR code');
+  return res.json();
+}
+
+export async function connectWhatsApp() {
+  const res = await fetch(`${API}/whatsapp/connect`, {
+    method: 'POST',
+    headers: getHeaders(),
+  });
+  if (!res.ok) throw new Error('Failed to connect WhatsApp');
+  return res.json();
+}
+
+export async function broadcastWhatsApp(message) {
+  const res = await fetch(`${API}/whatsapp/broadcast`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify({ message }),
+  });
+  if (!res.ok) throw new Error('Failed to broadcast message');
+  return res.json();
+}
+
+export async function disconnectWhatsApp() {
+  const res = await fetch(`${API}/whatsapp/disconnect`, {
+    method: 'POST',
+    headers: getHeaders(),
+  });
+  if (!res.ok) throw new Error('Failed to disconnect WhatsApp');
   return res.json();
 }
 

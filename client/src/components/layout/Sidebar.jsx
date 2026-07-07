@@ -1,12 +1,9 @@
 import {
   LayoutDashboard,
   Calendar,
-  ClipboardCheck,
   FileText,
   Users,
   Database,
-  Bell,
-  MessageCircle,
   TriangleAlert,
   BarChart3,
   LogOut,
@@ -16,17 +13,14 @@ import { useAuth } from '../../contexts/AuthContext';
 const navItems = [
   { id: 'dashboard', label: 'לוח בקרה', icon: LayoutDashboard },
   { id: 'shifts', label: 'לוח משמרות', icon: Calendar },
-  { id: 'approval', label: 'אישור משמרות', icon: ClipboardCheck, hasBadge: true },
   { id: 'summaries', label: 'סיכומי יום', icon: FileText },
   { id: 'chatters', label: 'צ׳אטרים', icon: Users },
   { id: 'models', label: 'מיוצגות', icon: Database },
-  { id: 'reminders', label: 'תזכורות', icon: Bell },
-  { id: 'whatsapp', label: 'WhatsApp', icon: MessageCircle },
   { id: 'errors', label: 'שגיאות', icon: TriangleAlert },
   { id: 'analytics', label: 'אנליטיקס', icon: BarChart3 },
 ];
 
-export default function Sidebar({ activePage, onNavigate, pendingCount = 0 }) {
+export default function Sidebar({ activePage, onNavigate }) {
   const { user, logout } = useAuth();
 
   return (
@@ -52,11 +46,6 @@ export default function Sidebar({ activePage, onNavigate, pendingCount = 0 }) {
             >
               <Icon size={20} className="shrink-0" />
               <span className="truncate">{item.label}</span>
-              {item.hasBadge && pendingCount > 0 && (
-                <span className="ms-auto shrink-0 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                  {pendingCount}
-                </span>
-              )}
             </button>
           );
         })}
