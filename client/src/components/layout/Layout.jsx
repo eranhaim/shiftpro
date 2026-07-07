@@ -8,7 +8,7 @@ import ShiftSchedule from '../shifts/ShiftSchedule';
 import DailySummaries from '../summaries/DailySummaries';
 import Chatters from '../chatters/Chatters';
 import Models from '../models/Models';
-import Errors from '../errors/Errors';
+
 import Analytics from '../analytics/Analytics';
 import WhatsAppBroadcastModal from '../whatsapp/WhatsAppBroadcastModal';
 
@@ -18,7 +18,7 @@ const pages = {
   summaries: DailySummaries,
   chatters: Chatters,
   models: Models,
-  errors: Errors,
+
   analytics: Analytics,
 };
 

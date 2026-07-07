@@ -16,7 +16,7 @@ const navItems = [
   { id: 'summaries', label: 'סיכומי יום', icon: FileText },
   { id: 'chatters', label: 'צ׳אטרים', icon: Users },
   { id: 'models', label: 'מיוצגות', icon: Database },
-  { id: 'errors', label: 'שגיאות', icon: TriangleAlert },
+
   { id: 'analytics', label: 'אנליטיקס', icon: BarChart3 },
 ];
 

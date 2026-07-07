@@ -358,7 +358,7 @@ export default function DailySummaries() {
 
       {/* Create/Edit Form Modal */}
       {showForm && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-2 sm:p-4" onClick={() => setShowForm(false)}>
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-2 sm:p-4">
           <div className="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-4 sm:p-6 space-y-4" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-bold text-white">{editingId ? 'ערוך סיכום יום' : 'סיכום יום חדש'}</h2>

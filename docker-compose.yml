@@ -5,4 +5,19 @@ services:
       - "8082:4000"
     env_file:
       - ./server/.env
+    environment:
+      - WHATSAPP_SERVICE_URL=http://whatsapp:4001
+    depends_on:
+      - whatsapp
     restart: unless-stopped
+
+  whatsapp:
+    build: ./whatsapp-service
+    expose:
+      - "4001"
+    volumes:
+      - whatsapp-auth:/app/auth
+    restart: unless-stopped
+
+volumes:
+  whatsapp-auth:

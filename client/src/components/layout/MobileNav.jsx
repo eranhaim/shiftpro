@@ -20,7 +20,6 @@ const primaryItems = [
 
 const moreItems = [
   { id: 'models', label: 'מיוצגות', icon: Database },
-  { id: 'errors', label: 'שגיאות', icon: TriangleAlert },
   { id: 'analytics', label: 'אנליטיקס', icon: BarChart3 },
 ];
 

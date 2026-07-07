@@ -5,7 +5,7 @@ import Chatter from '../models/Chatter.js';
 const router = Router();
 router.use(auth);
 
-const WHATSAPP_SERVICE = 'http://localhost:4001';
+const WHATSAPP_SERVICE = process.env.WHATSAPP_SERVICE_URL || 'http://localhost:4001';
 
 async function proxyGet(path) {
   const res = await fetch(`${WHATSAPP_SERVICE}${path}`);
