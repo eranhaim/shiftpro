@@ -1,32 +1,14 @@
 import { Router } from 'express';
 import auth from '../middleware/auth.js';
 import Chatter from '../models/Chatter.js';
+import * as wa from '../services/whatsapp-wwjs.js';
 
 const router = Router();
 router.use(auth);
 
-const WHATSAPP_SERVICE = process.env.WHATSAPP_SERVICE_URL || 'http://localhost:4001';
-
-async function proxyGet(path) {
-  const res = await fetch(`${WHATSAPP_SERVICE}${path}`);
-  return res.json();
-}
-
-async function proxyPost(path, body = {}) {
-  const res = await fetch(`${WHATSAPP_SERVICE}${path}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.detail || 'WhatsApp service error');
-  return data;
-}
-
 router.get('/status', async (req, res) => {
   try {
-    const data = await proxyGet('/status');
-    res.json(data);
+    res.json(wa.getStatus());
   } catch (err) {
     res.json({ connected: false, phone: null, error: err.message });
   }
@@ -34,8 +16,7 @@ router.get('/status', async (req, res) => {
 
 router.get('/qr', async (req, res) => {
   try {
-    const data = await proxyGet('/qr');
-    res.json(data);
+    res.json(wa.getQR());
   } catch (err) {
     res.status(500).json({ qr: null, error: err.message });
   }
@@ -43,7 +24,7 @@ router.get('/qr', async (req, res) => {
 
 router.post('/connect', async (req, res) => {
   try {
-    const data = await proxyPost('/connect');
+    const data = await wa.connect();
     res.json(data);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -65,7 +46,7 @@ router.post('/broadcast', async (req, res) => {
     }
 
     const phones = chatters.map((c) => c.phone);
-    const data = await proxyPost('/broadcast', { phones, message });
+    const data = await wa.broadcast(phones, message);
     res.json(data);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -74,7 +55,7 @@ router.post('/broadcast', async (req, res) => {
 
 router.post('/disconnect', async (req, res) => {
   try {
-    const data = await proxyPost('/disconnect');
+    const data = await wa.disconnect();
     res.json(data);
   } catch (err) {
     res.status(500).json({ message: err.message });
