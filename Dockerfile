@@ -10,8 +10,23 @@ RUN npm run build
 FROM node:20-slim
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y chromium --no-install-recommends && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y \
+    chromium \
+    dbus \
+    libgbm1 \
+    libnss3 \
+    libatk-bridge2.0-0 \
+    libxkbcommon0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxrandr2 \
+    libcups2 \
+    libpango-1.0-0 \
+    libcairo2 \
+    libasound2 \
+    --no-install-recommends && rm -rf /var/lib/apt/lists/*
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+ENV DBUS_SESSION_BUS_ADDRESS=/dev/null
 
 COPY server/package*.json ./
 RUN npm ci --omit=dev
