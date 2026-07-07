@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { CheckCircle, XCircle, Clock } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { getPendingShifts, approveShift, rejectShift } from '../../services/api.js';
 
 function Spinner() {
@@ -14,8 +15,7 @@ const DAY_NAMES = ['יום א׳', 'יום ב׳', 'יום ג׳', 'יום ד׳', '
 
 function formatShiftDate(dateStr) {
   const d = new Date(dateStr);
-  const dayName = DAY_NAMES[d.getDay()];
-  return `${dayName}, ${d.getDate()}.${d.getMonth() + 1}`;
+  return `${DAY_NAMES[d.getDay()]}, ${d.getDate()}.${d.getMonth() + 1}`;
 }
 
 function formatTime(t) {
@@ -28,6 +28,8 @@ export default function ShiftApproval() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [actionLoading, setActionLoading] = useState(null);
+  const [rejectingId, setRejectingId] = useState(null);
+  const [rejectReason, setRejectReason] = useState('');
 
   const fetchData = useCallback(async () => {
     try {
@@ -48,22 +50,25 @@ export default function ShiftApproval() {
     try {
       setActionLoading(id);
       await approveShift(id);
-      setShifts((prev) => prev.filter((s) => s._id !== id));
+      setShifts(prev => prev.filter(s => s._id !== id));
+      toast.success('המשמרת אושרה');
     } catch (err) {
-      alert(err.message);
+      toast.error(err.message);
     } finally {
       setActionLoading(null);
     }
   };
 
   const handleReject = async (id) => {
-    if (!confirm('האם לדחות את המשמרת?')) return;
     try {
       setActionLoading(id);
-      await rejectShift(id);
-      setShifts((prev) => prev.filter((s) => s._id !== id));
+      await rejectShift(id, rejectReason);
+      setShifts(prev => prev.filter(s => s._id !== id));
+      setRejectingId(null);
+      setRejectReason('');
+      toast.success('המשמרת נדחתה');
     } catch (err) {
-      alert(err.message);
+      toast.error(err.message);
     } finally {
       setActionLoading(null);
     }
@@ -98,7 +103,7 @@ export default function ShiftApproval() {
         Object.entries(grouped).map(([chatterName, chatterShifts]) => (
           <div key={chatterName} className="space-y-3">
             <h2 className="text-lg font-bold text-amber-400">{chatterName}</h2>
-            {chatterShifts.map((shift) => (
+            {chatterShifts.map(shift => (
               <div key={shift._id} className="bg-gray-900 border border-gray-800 rounded-xl p-4">
                 <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
                   <div className="min-w-0">
@@ -115,7 +120,14 @@ export default function ShiftApproval() {
                       אשר
                     </button>
                     <button
-                      onClick={() => handleReject(shift._id)}
+                      onClick={() => {
+                        if (rejectingId === shift._id) {
+                          handleReject(shift._id);
+                        } else {
+                          setRejectingId(shift._id);
+                          setRejectReason('');
+                        }
+                      }}
                       disabled={actionLoading === shift._id}
                       className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5 min-w-[5rem] whitespace-nowrap"
                     >
@@ -124,6 +136,33 @@ export default function ShiftApproval() {
                     </button>
                   </div>
                 </div>
+
+                {rejectingId === shift._id && (
+                  <div className="mb-3 space-y-2">
+                    <input
+                      type="text"
+                      value={rejectReason}
+                      onChange={e => setRejectReason(e.target.value)}
+                      placeholder="סיבת דחייה (אופציונלי)"
+                      className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-500"
+                      autoFocus
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') handleReject(shift._id);
+                        if (e.key === 'Escape') { setRejectingId(null); setRejectReason(''); }
+                      }}
+                    />
+                    <div className="flex gap-2">
+                      <button onClick={() => handleReject(shift._id)}
+                        className="text-red-400 hover:text-red-300 text-xs font-medium">
+                        אשר דחייה
+                      </button>
+                      <button onClick={() => { setRejectingId(null); setRejectReason(''); }}
+                        className="text-gray-400 hover:text-gray-300 text-xs">
+                        בטל
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {(shift.assignments || []).length > 0 && (
                   <div className="overflow-x-auto">
@@ -140,9 +179,7 @@ export default function ShiftApproval() {
                           <tr key={i} className="border-b border-gray-800/50">
                             <td className="py-2 px-3 text-white whitespace-nowrap">{a.modelName || a.model?.name}</td>
                             <td className="py-2 px-3 text-gray-300 whitespace-nowrap">{a.platform === 'telegram' ? 'טלגרם' : 'אונליפאנס'}</td>
-                            <td className="py-2 px-3">
-                              <CheckCircle className="w-4 h-4 text-green-500" />
-                            </td>
+                            <td className="py-2 px-3"><CheckCircle className="w-4 h-4 text-green-500" /></td>
                           </tr>
                         ))}
                       </tbody>

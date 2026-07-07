@@ -28,10 +28,13 @@ router.post('/', async (req, res) => {
 // PUT /api/models/:id
 router.put('/:id', async (req, res) => {
   try {
-    const { name, platforms, active } = req.body;
+    const update = {};
+    if (req.body.name !== undefined) update.name = req.body.name;
+    if (req.body.active !== undefined) update.active = req.body.active;
+    if (req.body.platforms !== undefined) update.platforms = req.body.platforms;
     const model = await Model.findByIdAndUpdate(
       req.params.id,
-      { name, platforms, active },
+      update,
       { new: true, runValidators: true },
     );
     if (!model) return res.status(404).json({ message: 'Model not found' });

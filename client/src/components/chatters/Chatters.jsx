@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { UserPlus, Trash2, Copy, Check } from 'lucide-react';
+import { UserPlus, Trash2, Copy, Check, Eye, EyeOff } from 'lucide-react';
 import { getChatters, createChatter, updateChatter, deleteChatter } from '../../services/api.js';
 
 function Spinner() {
@@ -24,6 +24,7 @@ export default function Chatters() {
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [copiedId, setCopiedId] = useState(null);
+  const [visiblePasswords, setVisiblePasswords] = useState({});
 
   const [form, setForm] = useState({ name: '', phone: '', email: '', password: '' });
 
@@ -144,6 +145,7 @@ export default function Chatters() {
                 <tr className="bg-gray-800/50 text-gray-400 text-sm">
                   <th className="py-3 px-4 font-medium whitespace-nowrap">שם</th>
                   <th className="py-3 px-4 font-medium whitespace-nowrap">טלפון</th>
+                  <th className="py-3 px-4 font-medium whitespace-nowrap">סיסמה</th>
                   <th className="py-3 px-4 font-medium whitespace-nowrap">כניסה אחרונה לאפליקציה</th>
                   <th className="py-3 px-4 font-medium whitespace-nowrap">TIER</th>
                   <th className="py-3 px-4 font-medium whitespace-nowrap">לינק אישי</th>
@@ -155,6 +157,21 @@ export default function Chatters() {
                   <tr key={c._id} className="border-b border-gray-800 hover:bg-gray-800/30">
                     <td className="py-3 px-4 text-white font-medium whitespace-nowrap">{c.name}</td>
                     <td className="py-3 px-4 text-gray-300 whitespace-nowrap">{c.phone || '—'}</td>
+                    <td className="py-3 px-4 whitespace-nowrap">
+                      {c.rawPassword ? (
+                        <span className="flex items-center gap-1.5">
+                          <button onClick={() => setVisiblePasswords(p => ({ ...p, [c._id]: !p[c._id] }))}
+                            className="text-gray-500 hover:text-gray-300 transition-colors">
+                            {visiblePasswords[c._id] ? <EyeOff size={14} /> : <Eye size={14} />}
+                          </button>
+                          <span className="text-xs font-mono text-amber-400">
+                            {visiblePasswords[c._id] ? c.rawPassword : '••••••••'}
+                          </span>
+                        </span>
+                      ) : (
+                        <span className="text-gray-600 text-xs">—</span>
+                      )}
+                    </td>
                     <td className="py-3 px-4 text-gray-400 text-sm whitespace-nowrap">{formatLastLogin(c.lastSignInAt)}</td>
                     <td className="py-3 px-4">
                       <select

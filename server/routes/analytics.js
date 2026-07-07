@@ -16,6 +16,13 @@ router.get('/overview', async (req, res) => {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
+    const dateFilter = {};
+    if (req.query.startDate || req.query.endDate) {
+      dateFilter.date = {};
+      if (req.query.startDate) dateFilter.date.$gte = new Date(req.query.startDate);
+      if (req.query.endDate) dateFilter.date.$lte = new Date(req.query.endDate);
+    }
+
     const [totalChatters, totalModels, shiftsToday, shiftRequestsToday, pendingApprovals] =
       await Promise.all([
         Chatter.countDocuments({ active: true }),
@@ -25,16 +32,19 @@ router.get('/overview', async (req, res) => {
         Shift.countDocuments({ status: 'pending' }),
       ]);
 
-    const pastShiftIds = (await Shift.find({ date: { $lt: today } }).select('_id')).map((s) => s._id);
+    const shiftFilter = dateFilter.date ? { date: dateFilter.date } : { date: { $lt: today } };
+    const pastShiftIds = (await Shift.find(shiftFilter).select('_id')).map((s) => s._id);
     const summaryShiftIds = new Set(
-      (await DailySummary.find({ shiftId: { $in: pastShiftIds } }).select('shiftId')).map((s) =>
-        s.shiftId.toString(),
-      ),
+      (await DailySummary.find({ shiftId: { $in: pastShiftIds } }).select('shiftId'))
+        .filter(s => s.shiftId)
+        .map((s) => s.shiftId.toString()),
     );
     const pendingSummaryDebts = pastShiftIds.filter((id) => !summaryShiftIds.has(id.toString())).length;
 
-    const totalCompleted = await Shift.countDocuments({ status: 'completed' });
-    const totalShifts = await Shift.countDocuments();
+    const completedFilter = dateFilter.date ? { ...dateFilter, status: 'completed' } : { status: 'completed' };
+    const allFilter = dateFilter.date ? dateFilter : {};
+    const totalCompleted = await Shift.countDocuments(completedFilter);
+    const totalShifts = await Shift.countDocuments(allFilter);
     const completionRate = totalShifts > 0 ? Math.round((totalCompleted / totalShifts) * 100) : 0;
 
     res.json({
@@ -81,6 +91,7 @@ router.get('/income', async (req, res) => {
           $group: {
             _id: '$chatterId',
             totalIncome: { $sum: '$incomeTotal' },
+            summaryCount: { $sum: 1 },
           },
         },
         {
@@ -97,6 +108,7 @@ router.get('/income', async (req, res) => {
             chatterId: '$_id',
             chatterName: '$chatter.name',
             totalIncome: 1,
+            summaryCount: 1,
           },
         },
         { $sort: { totalIncome: -1 } },

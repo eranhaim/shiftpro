@@ -19,6 +19,8 @@ import usersRoutes from './routes/users.js';
 import chatterAuthRoutes from './routes/chatter-auth.js';
 import chatterPortalRoutes from './routes/chatter-portal.js';
 import adminRoutes from './routes/admin.js';
+import remindersRoutes from './routes/reminders.js';
+import whatsappRoutes from './routes/whatsapp.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -43,6 +45,8 @@ app.use('/api/users', usersRoutes);
 app.use('/api/chatter-auth', chatterAuthRoutes);
 app.use('/api/chatter-portal', chatterPortalRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/reminders', remindersRoutes);
+app.use('/api/whatsapp', whatsappRoutes);
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
 

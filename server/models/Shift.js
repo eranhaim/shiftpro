@@ -8,9 +8,10 @@ const shiftSchema = new mongoose.Schema(
     endTime:   { type: String, required: true },
     status:    {
       type: String,
-      enum: ['pending', 'approved', 'scheduled', 'active', 'completed', 'rejected'],
+      enum: ['pending', 'approved', 'scheduled', 'active', 'completed', 'rejected', 'cancelled'],
       default: 'pending',
     },
+    rejectReason: { type: String },
     clockedIn:  { type: Date },
     clockedOut: { type: Date },
   },

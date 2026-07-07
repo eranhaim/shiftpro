@@ -118,7 +118,9 @@ router.put('/:id/approve', async (req, res) => {
 // PUT /api/shifts/:id/reject
 router.put('/:id/reject', async (req, res) => {
   try {
-    const shift = await Shift.findByIdAndUpdate(req.params.id, { status: 'rejected' }, { new: true });
+    const update = { status: 'rejected' };
+    if (req.body.rejectReason) update.rejectReason = req.body.rejectReason;
+    const shift = await Shift.findByIdAndUpdate(req.params.id, update, { new: true });
     if (!shift) return res.status(404).json({ message: 'Shift not found' });
     res.json(shift);
   } catch (err) {

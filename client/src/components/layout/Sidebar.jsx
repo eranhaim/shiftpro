@@ -5,6 +5,8 @@ import {
   FileText,
   Users,
   Database,
+  Bell,
+  MessageCircle,
   TriangleAlert,
   BarChart3,
   LogOut,
@@ -18,6 +20,8 @@ const navItems = [
   { id: 'summaries', label: 'סיכומי יום', icon: FileText },
   { id: 'chatters', label: 'צ׳אטרים', icon: Users },
   { id: 'models', label: 'מיוצגות', icon: Database },
+  { id: 'reminders', label: 'תזכורות', icon: Bell },
+  { id: 'whatsapp', label: 'WhatsApp', icon: MessageCircle },
   { id: 'errors', label: 'שגיאות', icon: TriangleAlert },
   { id: 'analytics', label: 'אנליטיקס', icon: BarChart3 },
 ];

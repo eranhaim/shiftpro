@@ -195,14 +195,18 @@ export default function AdminPanel() {
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 min-w-0">
                         <span className="text-white text-sm font-medium">{u.displayName}</span>
                         <span className="text-gray-400 text-sm">{u.email}</span>
-                        {u.rawPassword && (
-                          <span className="flex items-center gap-1.5">
-                            <button onClick={() => togglePassword(u._id)} className="text-gray-500 hover:text-gray-300 transition-colors">
-                              {visiblePasswords[u._id] ? <EyeOff size={14} /> : <Eye size={14} />}
-                            </button>
-                            <span className="text-xs font-mono text-amber-400">{visiblePasswords[u._id] ? u.rawPassword : '••••••••'}</span>
-                          </span>
-                        )}
+                        <span className="flex items-center gap-1.5">
+                          {u.rawPassword ? (
+                            <>
+                              <button onClick={() => togglePassword(u._id)} className="text-gray-500 hover:text-gray-300 transition-colors">
+                                {visiblePasswords[u._id] ? <EyeOff size={14} /> : <Eye size={14} />}
+                              </button>
+                              <span className="text-xs font-mono text-amber-400">{visiblePasswords[u._id] ? u.rawPassword : '••••••••'}</span>
+                            </>
+                          ) : (
+                            <span className="text-xs text-gray-600">סיסמה לא זמינה</span>
+                          )}
+                        </span>
                       </div>
                       <button onClick={() => deleteManager(u._id, u.email)} className="text-gray-400 hover:text-red-400 transition-colors shrink-0" title="מחק">
                         <Trash2 size={16} />
@@ -244,14 +248,18 @@ export default function AdminPanel() {
                         <span className="text-white text-sm font-medium">{c.name}</span>
                         <span className="text-gray-400 text-sm">{c.email || 'ללא אימייל'}</span>
                         {c.phone && <span className="text-gray-500 text-xs">{c.phone}</span>}
-                        {c.rawPassword && (
-                          <span className="flex items-center gap-1.5">
-                            <button onClick={() => togglePassword(c._id)} className="text-gray-500 hover:text-gray-300 transition-colors">
-                              {visiblePasswords[c._id] ? <EyeOff size={14} /> : <Eye size={14} />}
-                            </button>
-                            <span className="text-xs font-mono text-amber-400">{visiblePasswords[c._id] ? c.rawPassword : '••••••••'}</span>
-                          </span>
-                        )}
+                        <span className="flex items-center gap-1.5">
+                          {c.rawPassword ? (
+                            <>
+                              <button onClick={() => togglePassword(c._id)} className="text-gray-500 hover:text-gray-300 transition-colors">
+                                {visiblePasswords[c._id] ? <EyeOff size={14} /> : <Eye size={14} />}
+                              </button>
+                              <span className="text-xs font-mono text-amber-400">{visiblePasswords[c._id] ? c.rawPassword : '••••••••'}</span>
+                            </>
+                          ) : (
+                            <span className="text-xs text-gray-600">סיסמה לא זמינה</span>
+                          )}
+                        </span>
                       </div>
                       <button onClick={() => deleteChatter(c._id, c.name)} className="text-gray-400 hover:text-red-400 transition-colors shrink-0" title="מחק">
                         <Trash2 size={16} />

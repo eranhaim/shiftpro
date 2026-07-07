@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Trash2, Eye, EyeOff, Search } from 'lucide-react';
+import { Plus, Trash2, Search } from 'lucide-react';
 import { getModels, createModel, updateModel, deleteModel } from '../../services/api.js';
+import Tooltip from '../ui/Tooltip';
 
 function Spinner() {
   return (
@@ -41,7 +42,10 @@ export default function Models() {
     if (!newName.trim()) return;
     try {
       setSubmitting(true);
-      const created = await createModel({ name: newName.trim(), telegram: newTelegram, onlyfans: newOnlyfans });
+      const created = await createModel({
+        name: newName.trim(),
+        platforms: { telegram: newTelegram, onlyfans: newOnlyfans },
+      });
       setModels((prev) => [...prev, created]);
       setNewName('');
       setNewTelegram(true);
@@ -65,20 +69,26 @@ export default function Models() {
   };
 
   const handleTogglePlatform = async (model, platform) => {
-    const updated = { ...model, [platform]: !model[platform] };
+    const cur = model.platforms || {};
+    const updatedPlatforms = {
+      telegram: !!cur.telegram,
+      onlyfans: !!cur.onlyfans,
+      [platform]: !cur[platform],
+    };
     try {
-      await updateModel(model._id, { [platform]: updated[platform] });
-      setModels((prev) => prev.map((m) => m._id === model._id ? { ...m, [platform]: updated[platform] } : m));
+      const saved = await updateModel(model._id, { platforms: updatedPlatforms });
+      setModels((prev) => prev.map((m) =>
+        m._id === model._id ? saved : m
+      ));
     } catch (err) {
       alert(err.message);
     }
   };
 
   const handleToggleActive = async (model) => {
-    const active = !model.active;
     try {
-      await updateModel(model._id, { active });
-      setModels((prev) => prev.map((m) => m._id === model._id ? { ...m, active } : m));
+      const saved = await updateModel(model._id, { active: !model.active });
+      setModels((prev) => prev.map((m) => m._id === model._id ? saved : m));
     } catch (err) {
       alert(err.message);
     }
@@ -86,8 +96,8 @@ export default function Models() {
 
   const filtered = models.filter((m) => {
     if (search && !m.name.includes(search)) return false;
-    if (filterPlatform === 'telegram' && !m.telegram) return false;
-    if (filterPlatform === 'onlyfans' && !m.onlyfans) return false;
+    if (filterPlatform === 'telegram' && !m.platforms?.telegram) return false;
+    if (filterPlatform === 'onlyfans' && !m.platforms?.onlyfans) return false;
     return true;
   });
 
@@ -166,18 +176,19 @@ export default function Models() {
       ) : (
         <div className="space-y-2">
           {filtered.map((model) => {
-            const platforms = [model.telegram && 'טלגרם', model.onlyfans && 'אונלי'].filter(Boolean).join(' + ');
+            const p = model.platforms || {};
+            const platformsLabel = [p.telegram && 'טלגרם', p.onlyfans && 'אונלי'].filter(Boolean).join(' + ');
             return (
               <div key={model._id} className={`bg-gray-900 rounded-lg p-4 flex flex-wrap items-center justify-between gap-3 ${model.active === false ? 'opacity-50' : ''}`}>
                 <div className="min-w-0">
                   <p className="text-white font-bold truncate">{model.name}</p>
-                  <p className="text-sm text-gray-400 whitespace-nowrap">פלטפורמות: {platforms || 'ללא'}</p>
+                  <p className="text-sm text-gray-400 whitespace-nowrap">פלטפורמות: {platformsLabel || 'ללא'}</p>
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
                   <label className="flex items-center gap-1.5 text-sm text-gray-300 cursor-pointer whitespace-nowrap">
                     <input
                       type="checkbox"
-                      checked={!!model.telegram}
+                      checked={!!p.telegram}
                       onChange={() => handleTogglePlatform(model, 'telegram')}
                       className="rounded bg-gray-700 border-gray-600"
                     />
@@ -186,19 +197,27 @@ export default function Models() {
                   <label className="flex items-center gap-1.5 text-sm text-gray-300 cursor-pointer whitespace-nowrap">
                     <input
                       type="checkbox"
-                      checked={!!model.onlyfans}
+                      checked={!!p.onlyfans}
                       onChange={() => handleTogglePlatform(model, 'onlyfans')}
                       className="rounded bg-gray-700 border-gray-600"
                     />
                     אונלי
                   </label>
-                  <button
-                    onClick={() => handleToggleActive(model)}
-                    className="text-gray-400 hover:text-white p-1.5 transition-colors"
-                    title={model.active === false ? 'הפעל' : 'השבת'}
-                  >
-                    {model.active === false ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
+                  <Tooltip content={model.active === false ? 'מיוצגת לא פעילה' : 'מיוצגת פעילה'}>
+                    <button
+                      onClick={() => handleToggleActive(model)}
+                      className="relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none"
+                      style={{ backgroundColor: model.active === false ? '#374151' : '#2563eb' }}
+                      role="switch"
+                      aria-checked={model.active !== false}
+                    >
+                      <span
+                        className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
+                          model.active === false ? 'translate-x-1' : 'translate-x-[18px]'
+                        }`}
+                      />
+                    </button>
+                  </Tooltip>
                   <button
                     onClick={() => handleDelete(model._id)}
                     className="text-red-500 hover:text-red-400 p-1.5 transition-colors"

@@ -8,6 +8,8 @@ import ShiftApproval from '../approval/ShiftApproval';
 import DailySummaries from '../summaries/DailySummaries';
 import Chatters from '../chatters/Chatters';
 import Models from '../models/Models';
+import Reminders from '../reminders/Reminders';
+import WhatsAppPage from '../whatsapp/WhatsApp';
 import Errors from '../errors/Errors';
 import Analytics from '../analytics/Analytics';
 import { getPendingShifts } from '../../services/api';
@@ -19,6 +21,8 @@ const pages = {
   summaries: DailySummaries,
   chatters: Chatters,
   models: Models,
+  reminders: Reminders,
+  whatsapp: WhatsAppPage,
   errors: Errors,
   analytics: Analytics,
 };
@@ -52,7 +56,7 @@ export default function Layout() {
         </div>
 
         <main className="flex-1 overflow-y-auto overflow-x-hidden bg-gray-950 pt-[52px] pb-[60px] lg:pt-0 lg:pb-0">
-          <PageComponent />
+          <PageComponent onNavigate={setActivePage} />
         </main>
 
         <MobileNav activePage={activePage} onNavigate={setActivePage} />

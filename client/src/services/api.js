@@ -134,10 +134,11 @@ export async function approveShift(id) {
   return res.json();
 }
 
-export async function rejectShift(id) {
+export async function rejectShift(id, rejectReason) {
   const res = await fetch(`${API}/shifts/${id}/reject`, {
     method: 'PUT',
     headers: getHeaders(),
+    body: JSON.stringify({ rejectReason }),
   });
   if (!res.ok) throw new Error('Failed to reject shift');
   return res.json();
@@ -325,8 +326,12 @@ export async function deleteUser(id, panelPassword) {
 }
 
 // Analytics
-export async function getAnalyticsOverview() {
-  const res = await fetch(`${API}/analytics/overview`, { headers: getHeaders() });
+export async function getAnalyticsOverview(startDate, endDate) {
+  const params = new URLSearchParams();
+  if (startDate) params.set('startDate', startDate);
+  if (endDate) params.set('endDate', endDate);
+  const qs = params.toString();
+  const res = await fetch(`${API}/analytics/overview${qs ? '?' + qs : ''}`, { headers: getHeaders() });
   if (!res.ok) throw new Error('Failed to fetch analytics overview');
   return res.json();
 }

@@ -8,20 +8,19 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [mode, setMode] = useState('admin'); // 'admin' or 'chatter'
 
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
     setSubmitting(true);
     try {
-      if (mode === 'admin') {
-        await login(email, password);
-      } else {
+      await login(email, password);
+    } catch {
+      try {
         await chatterLogin(email, password);
+      } catch (err2) {
+        setError(err2.message || 'שגיאה בהתחברות');
       }
-    } catch (err) {
-      setError(err.message || 'שגיאה בהתחברות');
     } finally {
       setSubmitting(false);
     }
@@ -34,24 +33,6 @@ export default function Login() {
           <div className="text-center mb-8">
             <h1 className="text-2xl font-bold text-white">ShiftPro</h1>
             <p className="text-gray-400 mt-2">מערכת ניהול משמרות</p>
-          </div>
-
-          {/* Toggle admin / chatter */}
-          <div className="flex bg-gray-800 rounded-lg p-1 mb-6">
-            <button
-              type="button"
-              onClick={() => setMode('admin')}
-              className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors text-center ${mode === 'admin' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
-            >
-              מנהל
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode('chatter')}
-              className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors text-center ${mode === 'chatter' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
-            >
-              צ׳אטר
-            </button>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">

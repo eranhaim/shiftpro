@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Users, TrendingUp, Calendar, Clock, FileText, Plus } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { getAnalyticsOverview, getChatters, getMonthlyGoals, getSummaryDebts, createModel, upsertMonthlyGoal, copyMonthlyGoals } from '../../services/api.js';
 
 function getCurrentMonth() {
@@ -19,7 +20,7 @@ function Spinner() {
   );
 }
 
-export default function Dashboard() {
+export default function Dashboard({ onNavigate }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [overview, setOverview] = useState(null);
@@ -65,12 +66,13 @@ export default function Dashboard() {
     if (!modelName.trim()) return;
     try {
       setSubmitting(true);
-      await createModel({ name: modelName.trim(), telegram, onlyfans });
+      await createModel({ name: modelName.trim(), platforms: { telegram, onlyfans } });
       setModelName('');
       setTelegram(true);
       setOnlyfans(true);
+      toast.success('מיוצגת נוספה');
     } catch (err) {
-      alert(err.message);
+      toast.error(err.message);
     } finally {
       setSubmitting(false);
     }
@@ -89,8 +91,9 @@ export default function Dashboard() {
         )
       );
       setEditingGoalId(null);
+      toast.success('יעד עודכן');
     } catch (err) {
-      alert(err.message);
+      toast.error(err.message);
     }
   };
 
@@ -100,8 +103,9 @@ export default function Dashboard() {
       await copyMonthlyGoals();
       const goalsData = await getMonthlyGoals(currentMonth);
       setGoals(Array.isArray(goalsData) ? goalsData : []);
+      toast.success('יעדים הועתקו');
     } catch (err) {
-      alert(err.message);
+      toast.error(err.message);
     } finally {
       setCopyingGoals(false);
     }
@@ -111,19 +115,23 @@ export default function Dashboard() {
   if (error) return <div className="text-center py-16 text-red-500">{error}</div>;
 
   const kpis = [
-    { label: 'צ׳אטרים', value: chatters.length, icon: Users },
-    { label: 'מאושרות היום', value: overview?.shiftsToday ?? 0, icon: TrendingUp },
-    { label: 'סה״כ בקשות היום', value: overview?.shiftRequestsToday ?? 0, icon: Calendar },
-    { label: 'ממתינים לאישור', value: overview?.pendingApprovals ?? 0, icon: Clock, badge: 'חדש', badgeColor: 'bg-green-600' },
-    { label: 'חובות סיכום יום', value: debts.length, icon: FileText, badge: 'לבדיקה', badgeColor: 'bg-blue-600' },
-    { label: 'הושלמו (נתוני עבר)', value: `${overview?.completionRate ?? 0}%`, icon: TrendingUp },
+    { label: 'צ׳אטרים', value: chatters.length, icon: Users, page: 'chatters' },
+    { label: 'מאושרות היום', value: overview?.shiftsToday ?? 0, icon: TrendingUp, page: 'shifts' },
+    { label: 'סה״כ בקשות היום', value: overview?.shiftRequestsToday ?? 0, icon: Calendar, page: 'shifts' },
+    { label: 'ממתינים לאישור', value: overview?.pendingApprovals ?? 0, icon: Clock, badge: 'חדש', badgeColor: 'bg-green-600', page: 'approval' },
+    { label: 'חובות סיכום יום', value: debts.length, icon: FileText, badge: 'לבדיקה', badgeColor: 'bg-blue-600', page: 'summaries' },
+    { label: 'הושלמו (נתוני עבר)', value: `${overview?.completionRate ?? 0}%`, icon: TrendingUp, page: 'analytics' },
   ];
 
   return (
     <div className="space-y-6" dir="rtl">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {kpis.map((kpi) => (
-          <div key={kpi.label} className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex items-start justify-between overflow-hidden min-w-0">
+          <button
+            key={kpi.label}
+            onClick={() => onNavigate?.(kpi.page)}
+            className="bg-gray-900 border border-gray-800 rounded-xl p-4 flex items-start justify-between overflow-hidden min-w-0 text-right hover:border-gray-600 transition-colors cursor-pointer"
+          >
             <div>
               <p className="text-3xl font-bold text-white whitespace-nowrap">{kpi.value}</p>
               <p className="text-sm text-gray-400 mt-1">{kpi.label}</p>
@@ -136,7 +144,7 @@ export default function Dashboard() {
                 </span>
               )}
             </div>
-          </div>
+          </button>
         ))}
       </div>
 

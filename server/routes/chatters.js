@@ -25,6 +25,7 @@ router.post('/', async (req, res) => {
       data.token = crypto.randomBytes(16).toString('hex');
     }
     if (data.password) {
+      data.rawPassword = data.password;
       data.password = await bcrypt.hash(data.password, 10);
     }
     const chatter = await Chatter.create(data);
