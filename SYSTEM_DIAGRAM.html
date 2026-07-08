@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ShiftPro — מפת המערכת</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #0f1117; color: #e2e8f0; direction: rtl; }
+
+    h1 { text-align: center; padding: 32px 0 8px; font-size: 2rem; color: #60a5fa; }
+    .subtitle { text-align: center; color: #94a3b8; margin-bottom: 40px; font-size: 1rem; }
+
+    section { max-width: 1200px; margin: 0 auto 60px; padding: 0 24px; }
+    h2 { font-size: 1.3rem; color: #f8fafc; margin-bottom: 20px; border-right: 4px solid #3b82f6; padding-right: 12px; }
+
+    /* ===== FLOW DIAGRAM ===== */
+    .flow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 0;
+      margin-bottom: 12px;
+    }
+    .flow-box {
+      background: #1e293b;
+      border: 2px solid #334155;
+      border-radius: 12px;
+      padding: 14px 20px;
+      text-align: center;
+      min-width: 140px;
+    }
+    .flow-box .icon { font-size: 1.8rem; display: block; margin-bottom: 6px; }
+    .flow-box .label { font-size: 0.85rem; color: #94a3b8; }
+    .flow-box .name { font-weight: 700; font-size: 1rem; color: #f1f5f9; }
+    .arrow {
+      font-size: 1.4rem;
+      color: #3b82f6;
+      padding: 0 8px;
+      user-select: none;
+    }
+    .flow-box.blue { border-color: #3b82f6; }
+    .flow-box.green { border-color: #22c55e; }
+    .flow-box.yellow { border-color: #eab308; }
+    .flow-box.purple { border-color: #a855f7; }
+    .flow-box.orange { border-color: #f97316; }
+
+    /* ===== ROLES ===== */
+    .roles-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+    .role-card {
+      background: #1e293b;
+      border-radius: 14px;
+      padding: 20px;
+      border: 2px solid #334155;
+    }
+    .role-card h3 { font-size: 1.1rem; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+    .role-card ul { list-style: none; }
+    .role-card ul li { padding: 5px 0; color: #cbd5e1; font-size: 0.9rem; }
+    .role-card ul li::before { content: "← "; color: #3b82f6; }
+
+    /* ===== COMPONENTS GRID ===== */
+    .components-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+    .comp-card {
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 16px;
+      border: 2px solid #334155;
+      transition: border-color 0.2s;
+    }
+    .comp-card:hover { border-color: #3b82f6; }
+    .comp-card .comp-icon { font-size: 1.5rem; margin-bottom: 8px; }
+    .comp-card .comp-name { font-weight: 700; font-size: 0.95rem; color: #f1f5f9; margin-bottom: 4px; }
+    .comp-card .comp-path { font-size: 0.72rem; color: #475569; margin-bottom: 8px; font-family: monospace; direction: ltr; text-align: left; }
+    .comp-card .comp-desc { font-size: 0.83rem; color: #94a3b8; line-height: 1.5; }
+    .comp-card .comp-api { margin-top: 8px; font-size: 0.75rem; color: #60a5fa; font-family: monospace; direction: ltr; text-align: left; }
+
+    /* ===== DB MODELS ===== */
+    .models-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+    .model-card {
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 16px;
+      border: 2px solid #334155;
+    }
+    .model-card h3 { font-size: 1rem; color: #a78bfa; margin-bottom: 10px; display: flex; align-items: center; gap-8px: 8px; }
+    .field { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #1e3a5f22; font-size: 0.8rem; }
+    .field-name { color: #93c5fd; font-family: monospace; direction: ltr; }
+    .field-type { color: #64748b; font-size: 0.75rem; }
+
+    /* ===== API TABLE ===== */
+    .api-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .api-table th { background: #1e293b; padding: 10px 14px; text-align: right; color: #94a3b8; font-weight: 600; border-bottom: 2px solid #334155; }
+    .api-table td { padding: 9px 14px; border-bottom: 1px solid #1e293b; vertical-align: top; }
+    .api-table tr:hover td { background: #1e293b55; }
+    .method { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; font-family: monospace; direction: ltr; }
+    .get { background: #166534; color: #86efac; }
+    .post { background: #1e3a5f; color: #93c5fd; }
+    .put { background: #713f12; color: #fde68a; }
+    .del { background: #7f1d1d; color: #fca5a5; }
+    .route { font-family: monospace; direction: ltr; color: #c4b5fd; font-size: 0.8rem; }
+    .desc { color: #94a3b8; }
+
+    /* ===== AUTH FLOW ===== */
+    .auth-flow { display: flex; flex-direction: column; gap: 12px; max-width: 700px; margin: 0 auto; }
+    .auth-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 16px;
+      border-right: 4px solid #3b82f6;
+    }
+    .auth-step.chatter { border-right-color: #22c55e; }
+    .auth-num { font-size: 1.3rem; font-weight: 900; color: #3b82f6; min-width: 28px; }
+    .auth-step.chatter .auth-num { color: #22c55e; }
+    .auth-text { font-size: 0.9rem; color: #cbd5e1; line-height: 1.6; }
+    .auth-text strong { color: #f1f5f9; }
+    .code { font-family: monospace; font-size: 0.8rem; background: #0f172a; padding: 2px 6px; border-radius: 4px; color: #a78bfa; direction: ltr; display: inline-block; }
+
+    /* ===== DATA FLOW ===== */
+    .dataflow {
+      background: #1e293b;
+      border-radius: 14px;
+      padding: 24px;
+      border: 1px solid #334155;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .df-step { display: flex; align-items: flex-start; gap: 14px; padding: 10px 0; border-bottom: 1px solid #334155; }
+    .df-step:last-child { border-bottom: none; }
+    .df-icon { font-size: 1.3rem; min-width: 30px; text-align: center; }
+    .df-content { flex: 1; }
+    .df-title { font-size: 0.9rem; font-weight: 700; color: #f1f5f9; margin-bottom: 3px; }
+    .df-detail { font-size: 0.8rem; color: #64748b; font-family: monospace; direction: ltr; }
+
+    /* ===== LEGEND ===== */
+    .legend { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 16px; }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: #94a3b8; }
+    .legend-dot { width: 12px; height: 12px; border-radius: 3px; }
+
+    .tag { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 0.72rem; margin-right: 4px; }
+    .tag-auth { background: #1e3a5f; color: #93c5fd; }
+    .tag-admin { background: #3b0764; color: #e9d5ff; }
+    .tag-open { background: #14532d; color: #86efac; }
+
+    footer { text-align: center; padding: 40px; color: #334155; font-size: 0.8rem; }
+
+    /* ===== STATUS FLOW ===== */
+    .status-flow { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 0; margin: 24px 0; }
+    .status-box {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      border-radius: 10px; padding: 12px 18px; min-width: 110px; text-align: center;
+    }
+    .status-box .s-name { font-weight: 700; font-size: 0.9rem; }
+    .status-box .s-desc { font-size: 0.72rem; margin-top: 4px; opacity: 0.8; }
+    .s-arrow { font-size: 1.5rem; padding: 0 4px; color: #475569; align-self: center; }
+    .s-scheduled { background: #1e3a5f; color: #93c5fd; border: 2px solid #3b82f6; }
+    .s-pending   { background: #451a03; color: #fed7aa; border: 2px solid #f97316; }
+    .s-approved  { background: #14532d; color: #86efac; border: 2px solid #22c55e; }
+    .s-active    { background: #1e1b4b; color: #c4b5fd; border: 2px solid #8b5cf6; }
+    .s-completed { background: #1e293b; color: #94a3b8; border: 2px solid #475569; }
+    .s-rejected  { background: #450a0a; color: #fca5a5; border: 2px solid #ef4444; }
+    .status-notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap: 12px; margin-top: 20px; }
+    .sn { background: #1e293b; border-radius: 10px; padding: 14px; font-size: 0.82rem; color: #94a3b8; border-right: 3px solid #334155; }
+    .sn strong { color: #f1f5f9; display: block; margin-bottom: 4px; }
+
+    /* ===== DB RELATIONS ===== */
+    .rel-diagram { background: #1e293b; border-radius: 14px; padding: 32px; border: 1px solid #334155; overflow-x: auto; }
+    .rel-grid { display: flex; gap: 40px; justify-content: center; align-items: flex-start; flex-wrap: wrap; }
+    .rel-entity { background: #0f172a; border-radius: 10px; border: 2px solid #334155; min-width: 160px; }
+    .rel-entity-title { background: #1e3a5f; padding: 8px 14px; font-weight: 700; font-size: 0.9rem; color: #93c5fd; border-radius: 8px 8px 0 0; text-align: center; }
+    .rel-entity-title.green { background: #14532d; color: #86efac; }
+    .rel-entity-title.purple { background: #2e1065; color: #c4b5fd; }
+    .rel-entity-title.yellow { background: #451a03; color: #fed7aa; }
+    .rel-entity-title.pink { background: #4a044e; color: #f0abfc; }
+    .rel-entity-title.gray { background: #1e293b; color: #94a3b8; }
+    .rel-field { padding: 6px 14px; font-size: 0.78rem; border-bottom: 1px solid #1e293b; display: flex; justify-content: space-between; gap: 8px; }
+    .rel-field:last-child { border-bottom: none; }
+    .rel-fk { color: #f97316; font-style: italic; font-size: 0.72rem; }
+    .rel-pk { color: #eab308; font-size: 0.72rem; }
+    .rel-line { display: flex; align-items: center; gap: 8px; padding: 20px 0; color: #475569; font-size: 0.8rem; }
+    .rel-line span { white-space: nowrap; }
+    .rel-arrow { color: #f97316; font-size: 1.2rem; }
+
+    /* ===== IN-MEMORY WARNING ===== */
+    .warning-box { background: #451a03; border: 2px solid #f97316; border-radius: 12px; padding: 20px 24px; max-width: 700px; margin: 0 auto; }
+    .warning-box h3 { color: #fed7aa; margin-bottom: 10px; font-size: 1rem; }
+    .warning-box p { color: #fdba74; font-size: 0.88rem; line-height: 1.7; }
+    .warning-box .fix { background: #0f172a; border-radius: 8px; padding: 12px 16px; margin-top: 12px; font-family: monospace; font-size: 0.82rem; color: #86efac; direction: ltr; text-align: left; }
+  </style>
+</head>
+<body>
+
+<h1>🗺️ ShiftPro — מפת המערכת</h1>
+<p class="subtitle">הסבר ויזואלי של כל מה שקורה מאחורי הקלעים</p>
+
+<!-- ===== BIG PICTURE ===== -->
+<section>
+  <h2>📐 התמונה הגדולה — מה זה בכלל?</h2>
+  <div class="flow">
+    <div class="flow-box blue">
+      <span class="icon">🧑‍💻</span>
+      <span class="name">Browser</span>
+      <span class="label">React + Vite<br/>:5173</span>
+    </div>
+    <span class="arrow">⟵⟶</span>
+    <div class="flow-box yellow">
+      <span class="icon">⚙️</span>
+      <span class="name">Server</span>
+      <span class="label">Express.js<br/>:4000</span>
+    </div>
+    <span class="arrow">⟵⟶</span>
+    <div class="flow-box green">
+      <span class="icon">🗄️</span>
+      <span class="name">MongoDB</span>
+      <span class="label">mongoose<br/>in-memory / Atlas</span>
+    </div>
+  </div>
+  <p style="text-align:center;color:#64748b;font-size:0.85rem;margin-top:8px;">
+    הclient שולח בקשות API → השרת מקבל, בודק JWT, מושך מהDB → מחזיר JSON
+  </p>
+</section>
+
+<!-- ===== ROLES ===== -->
+<section>
+  <h2>👥 מי משתמש במערכת?</h2>
+  <div class="roles-grid">
+    <div class="role-card" style="border-color:#3b82f6">
+      <h3 style="color:#60a5fa">👑 Admin / Manager</h3>
+      <ul>
+        <li>נכנס דרך לוגין רגיל (email + password)</li>
+        <li>רואה את כל ה-Layout עם סייד-בר</li>
+        <li>יכול לנהל משמרות, צ'אטרים, מודלים</li>
+        <li>מאשר/דוחה משמרות</li>
+        <li>רואה אנליטיקס ודשבורד</li>
+      </ul>
+    </div>
+    <div class="role-card" style="border-color:#22c55e">
+      <h3 style="color:#4ade80">💬 Chatter</h3>
+      <ul>
+        <li>נכנס דרך כפתור "צ'אטר" בלוגין</li>
+        <li>רואה רק את ChatterPortal (מסוגר)</li>
+        <li>יכול לראות משמרות שלו</li>
+        <li>מגיש סיכומים יומיים</li>
+        <li>לא רואה שום מידע על אחרים</li>
+      </ul>
+    </div>
+    <div class="role-card" style="border-color:#f59e0b">
+      <h3 style="color:#fbbf24">🔐 Super Admin</h3>
+      <ul>
+        <li>נכנס דרך /admin (סיסמה נפרדת)</li>
+        <li>יוצר/מוחק מנהלים וצ'אטרים</li>
+        <li>לא צריך JWT — רק header סיסמה</li>
+        <li>סיסמה ברירת מחדל: Eran123</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ===== AUTH FLOW ===== -->
+<section>
+  <h2>🔐 איך כניסה עובדת?</h2>
+  <div class="auth-flow">
+    <div class="auth-step">
+      <div class="auth-num">1</div>
+      <div class="auth-text">
+        <strong>משתמש מזין email + password</strong> בדף הלוגין.<br/>
+        קיים toggle: מנהל או צ'אטר.
+      </div>
+    </div>
+    <div class="auth-step">
+      <div class="auth-num">2</div>
+      <div class="auth-text">
+        הClient שולח <span class="code">POST /api/auth/login</span> (מנהל) או <span class="code">POST /api/chatter-auth/login</span> (צ'אטר) עם JSON של email ו-password.
+      </div>
+    </div>
+    <div class="auth-step">
+      <div class="auth-num">3</div>
+      <div class="auth-text">
+        השרת מחפש את המשתמש בDB, משווה hash של הסיסמה עם bcrypt.<br/>
+        אם תקין — מחזיר <strong>JWT Token</strong> שתקף 7 ימים.
+      </div>
+    </div>
+    <div class="auth-step">
+      <div class="auth-num">4</div>
+      <div class="auth-text">
+        הToken נשמר ב-<span class="code">localStorage</span> בbrowser.<br/>
+        <strong>כל בקשה עתידית</strong> שולחת את הtoken ב-header: <span class="code">Authorization: Bearer ...</span>
+      </div>
+    </div>
+    <div class="auth-step">
+      <div class="auth-num">5</div>
+      <div class="auth-text">
+        ה-<strong>AuthContext</strong> מנהל את state המשתמש. בטעינה — קורא <span class="code">GET /api/auth/me</span>, ואם נכשל מנסה <span class="code">GET /api/chatter-auth/me</span>.
+      </div>
+    </div>
+    <div class="auth-step">
+      <div class="auth-num">6</div>
+      <div class="auth-text">
+        לפי <strong>role</strong> בtoken — מנתב לApp:
+        <br/>• <span class="code">chatter</span> → ChatterPortal
+        <br/>• <span class="code">admin/manager</span> → Layout (דשבורד מלא)
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== COMPONENTS ===== -->
+<section>
+  <h2>🧩 כל הקומפוננטות — מה כל אחת עושה?</h2>
+
+  <h3 style="color:#64748b;font-size:0.9rem;margin-bottom:12px;margin-top:8px;">Layout (עטיפה)</h3>
+  <div class="components-grid" style="margin-bottom:24px">
+    <div class="comp-card">
+      <div class="comp-icon">🖼️</div>
+      <div class="comp-name">Layout</div>
+      <div class="comp-path">components/layout/Layout.jsx</div>
+      <div class="comp-desc">עוטף את כל הדשבורד. מנהל state של "איזה עמוד פתוח" ומציג את הקומפוננטה הנכונה.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">📋</div>
+      <div class="comp-name">Sidebar</div>
+      <div class="comp-path">components/layout/Sidebar.jsx</div>
+      <div class="comp-desc">ניווט צד (desktop). כפתורים שמשנים activePage ב-Layout.</div>
+    </div>
+    <div class="comp-card">
+      <div class="comp-icon">📱</div>
+      <div class="comp-name">MobileNav</div>
+      <div class="comp-path">components/layout/MobileNav.jsx</div>
+      <div class="comp-desc">תחתית ניווט למובייל. עובד כמו Sidebar.</div>
+    </div>
+  </div>
+
+  <h3 style="color:#64748b;font-size:0.9rem;margin-bottom:12px;">עמודים ראשיים (Admin)</h3>
+  <div class="components-grid">
+    <div class="comp-card" style="border-color:#3b82f644">
+      <div class="comp-icon">📊</div>
+      <div class="comp-name">Dashboard</div>
+      <div class="comp-path">components/dashboard/Dashboard.jsx</div>
+      <div class="comp-desc">KPI cards: כמה צ'אטרים פעילים, משמרות היום, ממתינים לאישור. יצירת מודל מהיר + ניהול יעדים חודשיים.</div>
+      <div class="comp-api">GET /api/analytics/overview</div>
+    </div>
+    <div class="comp-card" style="border-color:#3b82f644">
+      <div class="comp-icon">📅</div>
+      <div class="comp-name">ShiftSchedule</div>
+      <div class="comp-path">components/shifts/ShiftSchedule.jsx</div>
+      <div class="comp-desc">גריד שבועי של משמרות. ניתן לייצר שבוע חדש, לייצא CSV, לראות כיסוי מודלים.</div>
+      <div class="comp-api">GET /api/shifts?weekStart=...&weekEnd=...</div>
+    </div>
+    <div class="comp-card" style="border-color:#3b82f644">
+      <div class="comp-icon">✅</div>
+      <div class="comp-name">ShiftApproval</div>
+      <div class="comp-path">components/approval/ShiftApproval.jsx</div>
+      <div class="comp-desc">משמרות בסטטוס "pending" מקובצות לפי צ'אטר. כפתורי אישור/דחייה.</div>
+      <div class="comp-api">GET /api/shifts/pending<br/>PUT /api/shifts/:id/approve</div>
+    </div>
+    <div class="comp-card" style="border-color:#3b82f644">
+      <div class="comp-icon">📝</div>
+      <div class="comp-name">DailySummaries</div>
+      <div class="comp-path">components/summaries/DailySummaries.jsx</div>
+      <div class="comp-desc">CRUD סיכומים יומיים. מעקב הכנסות (Telegram, OnlyFans, העברות), חובות, ייצוא CSV.</div>
+      <div class="comp-api">GET /api/daily-summaries<br/>POST /api/daily-summaries</div>
+    </div>
+    <div class="comp-card" style="border-color:#3b82f644">
+      <div class="comp-icon">💬</div>
+      <div class="comp-name">Chatters</div>
+      <div class="comp-path">components/chatters/Chatters.jsx</div>
+      <div class="comp-desc">ניהול רשימת הצ'אטרים — יצירה, עריכה, מחיקה, קביעת tier (A/B/C).</div>
+      <div class="comp-api">GET/POST/PUT/DELETE /api/chatters</div>
+    </div>
+    <div class="comp-card" style="border-color:#3b82f644">
+      <div class="comp-icon">👩‍🎤</div>
+      <div class="comp-name">Models</div>
+      <div class="comp-path">components/models/Models.jsx</div>
+      <div class="comp-desc">ניהול המודלים — שם, פלטפורמות (Telegram/OnlyFans), פעיל/לא פעיל.</div>
+      <div class="comp-api">GET/POST/PUT/DELETE /api/models</div>
+    </div>
+    <div class="comp-card" style="border-color:#3b82f644">
+      <div class="comp-icon">📈</div>
+      <div class="comp-name">Analytics</div>
+      <div class="comp-path">components/analytics/Analytics.jsx</div>
+      <div class="comp-desc">גרפים ונתוני הכנסות, פילוח לפי פלטפורמה, לפי צ'אטר, לפי שבוע.</div>
+      <div class="comp-api">GET /api/analytics/overview<br/>GET /api/analytics/income</div>
+    </div>
+    <div class="comp-card" style="border-color:#3b82f644">
+      <div class="comp-icon">🐛</div>
+      <div class="comp-name">Errors</div>
+      <div class="comp-path">components/errors/Errors.jsx</div>
+      <div class="comp-desc">לוג שגיאות מערכת. סימון כ"פתור".</div>
+      <div class="comp-api">GET /api/errors<br/>PUT /api/errors/:id</div>
+    </div>
+  </div>
+
+  <h3 style="color:#64748b;font-size:0.9rem;margin-bottom:12px;margin-top:24px;">עמודים מיוחדים</h3>
+  <div class="components-grid">
+    <div class="comp-card" style="border-color:#22c55e44">
+      <div class="comp-icon">🌀</div>
+      <div class="comp-name">ChatterPortal</div>
+      <div class="comp-path">components/chatter-portal/ChatterPortal.jsx</div>
+      <div class="comp-desc">ממשק נפרד לצ'אטרים בלבד. שני tabs: "המשמרות שלי" ו"סיכומים יומיים". לא רואה שום מידע על אחרים.</div>
+      <div class="comp-api">GET /api/chatter-portal/my-shifts<br/>POST /api/chatter-portal/submit-summary</div>
+    </div>
+    <div class="comp-card" style="border-color:#f59e0b44">
+      <div class="comp-icon">🔒</div>
+      <div class="comp-name">AdminPanel</div>
+      <div class="comp-path">components/admin/AdminPanel.jsx</div>
+      <div class="comp-desc">route: /admin. מוגן בסיסמה נפרדת (header). ניהול מנהלים וצ'אטרים ברמת super-admin.</div>
+      <div class="comp-api">x-admin-password: Eran123<br/>GET /api/admin/managers</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== DB MODELS ===== -->
+<section>
+  <h2>🗄️ מודלי הDB — מה נשמר איפה?</h2>
+  <div class="models-grid">
+    <div class="model-card">
+      <h3>👤 User (מנהלים)</h3>
+      <div class="field"><span class="field-name">email</span><span class="field-type">String unique</span></div>
+      <div class="field"><span class="field-name">password</span><span class="field-type">String (hashed)</span></div>
+      <div class="field"><span class="field-name">rawPassword</span><span class="field-type">String (plain)</span></div>
+      <div class="field"><span class="field-name">displayName</span><span class="field-type">String</span></div>
+      <div class="field"><span class="field-name">role</span><span class="field-type">admin / manager</span></div>
+    </div>
+    <div class="model-card">
+      <h3>💬 Chatter</h3>
+      <div class="field"><span class="field-name">name</span><span class="field-type">String</span></div>
+      <div class="field"><span class="field-name">email</span><span class="field-type">String</span></div>
+      <div class="field"><span class="field-name">password</span><span class="field-type">String (hashed)</span></div>
+      <div class="field"><span class="field-name">phone</span><span class="field-type">String</span></div>
+      <div class="field"><span class="field-name">token</span><span class="field-type">String (unique)</span></div>
+      <div class="field"><span class="field-name">bonusTier</span><span class="field-type">A / B / C / null</span></div>
+      <div class="field"><span class="field-name">active</span><span class="field-type">Boolean</span></div>
+    </div>
+    <div class="model-card">
+      <h3>📅 Shift (משמרת)</h3>
+      <div class="field"><span class="field-name">chatterId</span><span class="field-type">→ Chatter</span></div>
+      <div class="field"><span class="field-name">date</span><span class="field-type">Date</span></div>
+      <div class="field"><span class="field-name">startTime</span><span class="field-type">String (e.g. "12:00")</span></div>
+      <div class="field"><span class="field-name">endTime</span><span class="field-type">String (e.g. "19:00")</span></div>
+      <div class="field"><span class="field-name">status</span><span class="field-type">pending/approved/scheduled...</span></div>
+    </div>
+    <div class="model-card">
+      <h3>🔗 ShiftAssignment</h3>
+      <div class="field"><span class="field-name">shiftId</span><span class="field-type">→ Shift</span></div>
+      <div class="field"><span class="field-name">modelId</span><span class="field-type">→ Model</span></div>
+      <div class="field"><span class="field-name">modelName</span><span class="field-type">String (cache)</span></div>
+      <div class="field"><span class="field-name">platform</span><span class="field-type">telegram / onlyfans</span></div>
+      <div class="field"><span class="field-name">shiftDate</span><span class="field-type">Date (cache)</span></div>
+    </div>
+    <div class="model-card">
+      <h3>👩‍🎤 Model</h3>
+      <div class="field"><span class="field-name">name</span><span class="field-type">String unique</span></div>
+      <div class="field"><span class="field-name">active</span><span class="field-type">Boolean</span></div>
+      <div class="field"><span class="field-name">platforms.telegram</span><span class="field-type">Boolean</span></div>
+      <div class="field"><span class="field-name">platforms.onlyfans</span><span class="field-type">Boolean</span></div>
+    </div>
+    <div class="model-card">
+      <h3>📝 DailySummary</h3>
+      <div class="field"><span class="field-name">chatterId</span><span class="field-type">→ Chatter</span></div>
+      <div class="field"><span class="field-name">shiftId</span><span class="field-type">→ Shift (אופ')</span></div>
+      <div class="field"><span class="field-name">incomeTelegram</span><span class="field-type">Number</span></div>
+      <div class="field"><span class="field-name">incomeOnlyfans</span><span class="field-type">Number</span></div>
+      <div class="field"><span class="field-name">incomeTotal</span><span class="field-type">Number</span></div>
+      <div class="field"><span class="field-name">availabilityStatus</span><span class="field-type">full/partial/absent</span></div>
+      <div class="field"><span class="field-name">hasDebts</span><span class="field-type">Boolean</span></div>
+    </div>
+    <div class="model-card">
+      <h3>🎯 MonthlyGoal</h3>
+      <div class="field"><span class="field-name">chatterId</span><span class="field-type">→ Chatter</span></div>
+      <div class="field"><span class="field-name">month</span><span class="field-type">YYYY-MM-01</span></div>
+      <div class="field"><span class="field-name">goalAmount</span><span class="field-type">Number</span></div>
+    </div>
+    <div class="model-card">
+      <h3>🐛 ErrorLog</h3>
+      <div class="field"><span class="field-name">message</span><span class="field-type">String</span></div>
+      <div class="field"><span class="field-name">level</span><span class="field-type">error/warning/info</span></div>
+      <div class="field"><span class="field-name">resolved</span><span class="field-type">Boolean</span></div>
+      <div class="field"><span class="field-name">source</span><span class="field-type">String</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== API TABLE ===== -->
+<section>
+  <h2>🌐 כל ה-API Endpoints</h2>
+  <table class="api-table">
+    <thead>
+      <tr>
+        <th>Method</th>
+        <th>Route</th>
+        <th>מה זה עושה</th>
+        <th>הרשאה</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Auth -->
+      <tr><td><span class="method post">POST</span></td><td class="route">/api/auth/login</td><td class="desc">כניסת מנהל</td><td><span class="tag tag-open">פתוח</span></td></tr>
+      <tr><td><span class="method get">GET</span></td><td class="route">/api/auth/me</td><td class="desc">מי אני (admin)</td><td><span class="tag tag-auth">JWT</span></td></tr>
+      <tr><td><span class="method post">POST</span></td><td class="route">/api/chatter-auth/login</td><td class="desc">כניסת צ'אטר</td><td><span class="tag tag-open">פתוח</span></td></tr>
+      <tr><td><span class="method get">GET</span></td><td class="route">/api/chatter-auth/me</td><td class="desc">מי אני (chatter)</td><td><span class="tag tag-auth">JWT</span></td></tr>
+      <!-- Chatters -->
+      <tr><td><span class="method get">GET</span></td><td class="route">/api/chatters</td><td class="desc">רשימת כל הצ'אטרים</td><td><span class="tag tag-auth">JWT</span></td></tr>
+      <tr><td><span class="method post">POST</span></td><td class="route">/api/chatters</td><td class="desc">יצירת צ'אטר חדש</td><td><span class="tag tag-auth">JWT</span></td></tr>
+      <tr><td><span class="method put">PUT</span></td><td class="route">/api/chatters/:id</td><td class="desc">עדכון צ'אטר</td><td><span class="tag tag-auth">JWT</span></td></tr>
+      <tr><td><span class="method del">DELETE</span></td><td class="route">/api/chatters/:id</td><td class="desc">מחיקת צ'אטר</td><td><span class="tag tag-auth">JWT</span></td></tr>
+      <!-- Shifts -->
+      <tr><td><span class="method get">GET</span></td><td class="route">/api/shifts</td><td class="desc">משמרות לפי טווח תאריכים</td><td><span class="tag tag-auth">JWT</span></td></tr>
+      <tr><td><span class="method get">GET</span></td><td class="route">/api/shifts/pending</td><td class="desc">משמרות הממתינות לאישור</td><td><span class="tag tag-auth">JWT</span></td></tr>
+      <tr><td><span class="method post">POST</span></td><td class="route">/api/shifts/generate-week</td><td class="desc">יצירה אוטומטית של שבוע</td><td><span class="tag tag-auth">JWT</span></td></tr>
+      <tr><td><span class="method put">PUT</span></td><td class="route">/api/shifts/:id/approve</td><td class="desc">אישור משמרת</td><td><span class="tag tag-auth">JWT</span></td></tr>
+      <tr><td><span class="method put">PUT</span></td><td class="route">/api/shifts/:id/reject</td><td class="desc">דחיית משמרת</td><td><span class="tag tag-auth">JWT</span></td></tr>
+      <!-- Models -->
+      <tr><td><span class="method get">GET</span></td><td class="route">/api/models</td><td class="desc">רשימת מודלים</td><td><span class="tag tag-auth">JWT</span></td></tr>
+      <tr><td><span class="method post">POST</span></td><td class="route">/api/models</td><td class="desc">יצירת מודל</td><td><span class="tag tag-auth">JWT</span></td></tr>
+      <tr><td><span class="method put">PUT</span></td><td class="route">/api/models/:id</td><td class="desc">עדכון מודל</td><td><span class="tag tag-auth">JWT</span></td></tr>
+      <tr><td><span class="method del">DELETE</span></td><td class="route">/api/models/:id</td><td class="desc">מחיקת מודל</td><td><span class="tag tag-auth">JWT</span></td></tr>
+      <!-- Summaries -->
+      <tr><td><span class="method get">GET</span></td><td class="route">/api/daily-summaries</td><td class="desc">סיכומים יומיים</td><td><span class="tag tag-auth">JWT</span></td></tr>
+      <tr><td><span class="method get">GET</span></td><td class="route">/api/daily-summaries/debts</td><td class="desc">משמרות בלי סיכום</td><td><span class="tag tag-auth">JWT</span></td></tr>
+      <tr><td><span class="method get">GET</span></td><td class="route">/api/daily-summaries/income</td><td class="desc">הכנסות מצטברות</td><td><span class="tag tag-auth">JWT</span></td></tr>
+      <!-- Analytics -->
+      <tr><td><span class="method get">GET</span></td><td class="route">/api/analytics/overview</td><td class="desc">KPIs לדשבורד</td><td><span class="tag tag-auth">JWT</span></td></tr>
+      <tr><td><span class="method get">GET</span></td><td class="route">/api/analytics/income</td><td class="desc">גרפי הכנסות</td><td><span class="tag tag-auth">JWT</span></td></tr>
+      <tr><td><span class="method get">GET</span></td><td class="route">/api/analytics/shifts</td><td class="desc">פילוח משמרות</td><td><span class="tag tag-auth">JWT</span></td></tr>
+      <!-- Admin -->
+      <tr><td><span class="method get">GET</span></td><td class="route">/api/admin/managers</td><td class="desc">רשימת מנהלים</td><td><span class="tag tag-admin">Admin Pass</span></td></tr>
+      <tr><td><span class="method post">POST</span></td><td class="route">/api/admin/managers</td><td class="desc">יצירת מנהל</td><td><span class="tag tag-admin">Admin Pass</span></td></tr>
+      <tr><td><span class="method del">DELETE</span></td><td class="route">/api/admin/managers/:id</td><td class="desc">מחיקת מנהל</td><td><span class="tag tag-admin">Admin Pass</span></td></tr>
+      <!-- Chatter Portal -->
+      <tr><td><span class="method get">GET</span></td><td class="route">/api/chatter-portal/my-shifts</td><td class="desc">משמרות של הצ'אטר המחובר</td><td><span class="tag tag-auth">JWT Chatter</span></td></tr>
+      <tr><td><span class="method post">POST</span></td><td class="route">/api/chatter-portal/request-shift</td><td class="desc">בקשת משמרת</td><td><span class="tag tag-auth">JWT Chatter</span></td></tr>
+      <tr><td><span class="method post">POST</span></td><td class="route">/api/chatter-portal/submit-summary</td><td class="desc">הגשת סיכום יומי</td><td><span class="tag tag-auth">JWT Chatter</span></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ===== DATA FLOW ===== -->
+<section>
+  <h2>🔄 איך נתונים זורמים — דוגמה מלאה</h2>
+  <p style="color:#64748b;font-size:0.85rem;margin-bottom:16px;text-align:center;">דוגמה: מנהל פותח את עמוד המשמרות</p>
+  <div class="dataflow">
+    <div class="df-step">
+      <div class="df-icon">👆</div>
+      <div class="df-content">
+        <div class="df-title">מנהל לוחץ "משמרות" בסייד-בר</div>
+        <div class="df-detail">Layout.jsx → setActivePage('shifts')</div>
+      </div>
+    </div>
+    <div class="df-step">
+      <div class="df-icon">⚛️</div>
+      <div class="df-content">
+        <div class="df-title">ShiftSchedule מתרנדר, useEffect רץ</div>
+        <div class="df-detail">ShiftSchedule.jsx → calls getShifts(weekStart, weekEnd)</div>
+      </div>
+    </div>
+    <div class="df-step">
+      <div class="df-icon">📡</div>
+      <div class="df-content">
+        <div class="df-title">API service שולח בקשה לשרת</div>
+        <div class="df-detail">GET /api/shifts?weekStart=2025-01-01&weekEnd=2025-01-07<br/>Authorization: Bearer eyJ...</div>
+      </div>
+    </div>
+    <div class="df-step">
+      <div class="df-icon">🔐</div>
+      <div class="df-content">
+        <div class="df-title">Middleware בודק JWT</div>
+        <div class="df-detail">auth.js → jwt.verify(token) → req.user = {id, role}</div>
+      </div>
+    </div>
+    <div class="df-step">
+      <div class="df-icon">🗄️</div>
+      <div class="df-content">
+        <div class="df-title">Route handler שואל את MongoDB</div>
+        <div class="df-detail">Shift.find({date: {$gte, $lte}}).populate('chatterId')<br/>+ ShiftAssignment.find({shiftId: {$in: ids}})</div>
+      </div>
+    </div>
+    <div class="df-step">
+      <div class="df-icon">📦</div>
+      <div class="df-content">
+        <div class="df-title">שרת מחזיר JSON מסודר</div>
+        <div class="df-detail">[{_id, date, chatter: {name}, assignments: [...]}]</div>
+      </div>
+    </div>
+    <div class="df-step">
+      <div class="df-icon">🖥️</div>
+      <div class="df-content">
+        <div class="df-title">ShiftSchedule מעדכן state ומציג גריד</div>
+        <div class="df-detail">setShifts(data) → React מרנדר את הטבלה</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== SHIFT STATUS FLOW ===== -->
+<section>
+  <h2>🔄 סטטוסי משמרת — מה קורה לה בחיים?</h2>
+  <div class="status-flow">
+    <div class="status-box s-scheduled">
+      <span class="s-name">scheduled</span>
+      <span class="s-desc">נוצרה<br/>אוטומטית</span>
+    </div>
+    <span class="s-arrow">→</span>
+    <div class="status-box s-pending">
+      <span class="s-name">pending</span>
+      <span class="s-desc">צ'אטר ביקש<br/>אישור</span>
+    </div>
+    <span class="s-arrow">→</span>
+    <div class="status-box s-approved">
+      <span class="s-name">approved</span>
+      <span class="s-desc">מנהל אישר ✓</span>
+    </div>
+    <span class="s-arrow">→</span>
+    <div class="status-box s-active">
+      <span class="s-name">active</span>
+      <span class="s-desc">משמרת<br/>מתנהלת עכשיו</span>
+    </div>
+    <span class="s-arrow">→</span>
+    <div class="status-box s-completed">
+      <span class="s-name">completed</span>
+      <span class="s-desc">הסתיימה</span>
+    </div>
+  </div>
+  <div style="display:flex;justify-content:center;margin-top:-10px;margin-bottom:16px;">
+    <div style="display:flex;align-items:center;gap:8px;color:#64748b;font-size:0.85rem;">
+      <span>מ-pending ניתן גם:</span>
+      <div class="status-box s-rejected" style="padding:8px 14px;">
+        <span class="s-name">rejected</span>
+        <span class="s-desc">מנהל דחה ✗</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="status-notes">
+    <div class="sn"><strong>📅 scheduled</strong>נוצר ע"י generate-week — שבוע שלם בבת אחת לכל הצ'אטרים הפעילים. ברירת מחדל.</div>
+    <div class="sn"><strong>⏳ pending</strong>כשצ'אטר מגיש בקשת משמרת דרך ChatterPortal. מופיע בעמוד "אישור" אצל המנהל.</div>
+    <div class="sn"><strong>✅ approved</strong>מנהל לחץ "אשר" ב-ShiftApproval. המשמרת נחשבת תקינה.</div>
+    <div class="sn"><strong>❌ rejected</strong>מנהל לחץ "דחה". המשמרת לא נספרת בסטטיסטיקות.</div>
+    <div class="sn"><strong>🟣 active</strong>משמרת שמתרחשת כרגע (clockedIn נקבע). לא בשימוש מלא כרגע.</div>
+    <div class="sn"><strong>⬛ completed</strong>משמרת שהסתיימה. יכולה לקבל DailySummary.</div>
+  </div>
+</section>
+
+<!-- ===== DB RELATIONS ===== -->
+<section>
+  <h2>🔗 קשרים בין טבלאות DB</h2>
+  <div class="rel-diagram">
+    <div class="rel-grid">
+
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+        <div class="rel-entity">
+          <div class="rel-entity-title green">Chatter</div>
+          <div class="rel-field"><span>_id</span><span class="rel-pk">PK</span></div>
+          <div class="rel-field"><span>name</span></div>
+          <div class="rel-field"><span>email</span></div>
+          <div class="rel-field"><span>bonusTier</span></div>
+          <div class="rel-field"><span>active</span></div>
+          <div class="rel-field"><span>token</span></div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;justify-content:center;align-items:center;gap:4px;color:#f97316;font-size:0.8rem;padding-top:40px;">
+        <span>1</span>
+        <span style="font-size:1.5rem;">→</span>
+        <span>∞</span>
+      </div>
+
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+        <div class="rel-entity">
+          <div class="rel-entity-title">Shift</div>
+          <div class="rel-field"><span>_id</span><span class="rel-pk">PK</span></div>
+          <div class="rel-field"><span>chatterId</span><span class="rel-fk">→ Chatter</span></div>
+          <div class="rel-field"><span>date</span></div>
+          <div class="rel-field"><span>startTime</span></div>
+          <div class="rel-field"><span>endTime</span></div>
+          <div class="rel-field"><span>status</span></div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;justify-content:center;align-items:center;gap:4px;color:#f97316;font-size:0.8rem;padding-top:40px;">
+        <span>1</span>
+        <span style="font-size:1.5rem;">→</span>
+        <span>∞</span>
+      </div>
+
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+        <div class="rel-entity">
+          <div class="rel-entity-title yellow">ShiftAssignment</div>
+          <div class="rel-field"><span>_id</span><span class="rel-pk">PK</span></div>
+          <div class="rel-field"><span>shiftId</span><span class="rel-fk">→ Shift</span></div>
+          <div class="rel-field"><span>modelId</span><span class="rel-fk">→ Model</span></div>
+          <div class="rel-field"><span>modelName</span><span style="font-size:0.7rem;color:#64748b">cache</span></div>
+          <div class="rel-field"><span>platform</span></div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;justify-content:center;align-items:center;gap:4px;color:#f97316;font-size:0.8rem;padding-top:40px;">
+        <span>∞</span>
+        <span style="font-size:1.5rem;">←</span>
+        <span>1</span>
+      </div>
+
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+        <div class="rel-entity">
+          <div class="rel-entity-title pink">Model</div>
+          <div class="rel-field"><span>_id</span><span class="rel-pk">PK</span></div>
+          <div class="rel-field"><span>name</span></div>
+          <div class="rel-field"><span>active</span></div>
+          <div class="rel-field"><span>platforms.telegram</span></div>
+          <div class="rel-field"><span>platforms.onlyfans</span></div>
+        </div>
+      </div>
+
+    </div>
+
+    <div style="margin-top:32px;border-top:1px solid #334155;padding-top:24px;">
+      <div style="display:flex;gap:32px;flex-wrap:wrap;justify-content:center;">
+
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+          <div class="rel-entity" style="min-width:180px">
+            <div class="rel-entity-title green">Chatter</div>
+            <div class="rel-field"><span>_id</span><span class="rel-pk">PK</span></div>
+          </div>
+          <div style="color:#f97316;font-size:1.2rem;">↓ 1→∞</div>
+          <div class="rel-entity" style="min-width:180px">
+            <div class="rel-entity-title gray">DailySummary</div>
+            <div class="rel-field"><span>_id</span><span class="rel-pk">PK</span></div>
+            <div class="rel-field"><span>chatterId</span><span class="rel-fk">→ Chatter</span></div>
+            <div class="rel-field"><span>shiftId</span><span class="rel-fk">→ Shift (אופ')</span></div>
+            <div class="rel-field"><span>incomeTelegram</span></div>
+            <div class="rel-field"><span>incomeOnlyfans</span></div>
+            <div class="rel-field"><span>incomeTotal</span></div>
+            <div class="rel-field"><span>hasDebts</span></div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+          <div class="rel-entity" style="min-width:180px">
+            <div class="rel-entity-title green">Chatter</div>
+            <div class="rel-field"><span>_id</span><span class="rel-pk">PK</span></div>
+          </div>
+          <div style="color:#f97316;font-size:1.2rem;">↓ 1→∞</div>
+          <div class="rel-entity" style="min-width:180px">
+            <div class="rel-entity-title purple">MonthlyGoal</div>
+            <div class="rel-field"><span>_id</span><span class="rel-pk">PK</span></div>
+            <div class="rel-field"><span>chatterId</span><span class="rel-fk">→ Chatter</span></div>
+            <div class="rel-field"><span>month</span><span style="font-size:0.7rem;color:#64748b">YYYY-MM-01</span></div>
+            <div class="rel-field"><span>goalAmount</span></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <p style="text-align:center;color:#475569;font-size:0.78rem;margin-top:20px;">
+      כתום = Foreign Key (קישור לטבלה אחרת) &nbsp;|&nbsp; צהוב = Primary Key (_id)
+    </p>
+  </div>
+</section>
+
+<!-- ===== IN-MEMORY WARNING ===== -->
+<section>
+  <h2>⚠️ דבר אחד חשוב — In-Memory DB</h2>
+  <div class="warning-box">
+    <h3>🔥 כל פעם שסוגרים את השרת — הנתונים נמחקים!</h3>
+    <p>
+      כרגע אין קובץ <code style="background:#0f172a;padding:2px 6px;border-radius:4px;color:#86efac">.env</code> עם כתובת MongoDB אמיתית.
+      השרת משתמש ב-<strong>in-memory MongoDB</strong> — DB שחי רק בזיכרון של התהליך.
+      <br/><br/>
+      כלומר: כל פעם שמריצים <code style="background:#0f172a;padding:2px 6px;border-radius:4px;color:#86efac">npm run dev</code> חדש — צריך לעשות <code style="background:#0f172a;padding:2px 6px;border-radius:4px;color:#86efac">npm run seed</code> שוב.
+      <br/><br/>
+      <strong>הפתרון — לחבר MongoDB אמיתי:</strong>
+    </p>
+    <div class="fix">
+# server/.env<br/>
+MONGODB_URI=mongodb://localhost:27017/shiftpro<br/>
+JWT_SECRET=devsecret123<br/><br/>
+# אחרי זה: brew install mongodb-community &amp;&amp; brew services start mongodb-community
+    </div>
+    <p style="margin-top:12px;color:#fdba74;font-size:0.82rem;">אחרי זה — seed פעם אחת, ונתונים נשמרים לצמיתות.</p>
+  </div>
+</section>
+
+<!-- ===== CREDENTIALS ===== -->
+<section>
+  <h2>🔑 פרטי כניסה (dev)</h2>
+  <div class="roles-grid">
+    <div class="role-card" style="border-color:#3b82f6">
+      <h3 style="color:#60a5fa">👑 Admin Login <span style="font-size:0.8rem;color:#64748b">localhost:5173</span></h3>
+      <ul>
+        <li>Email: gil@onlyelite.co.il</li>
+        <li>Password: elite665</li>
+        <li>נכנס ל-Layout המלא</li>
+      </ul>
+    </div>
+    <div class="role-card" style="border-color:#f59e0b">
+      <h3 style="color:#fbbf24">🔐 Admin Panel <span style="font-size:0.8rem;color:#64748b">localhost:5173/admin</span></h3>
+      <ul>
+        <li>Password: Eran123</li>
+        <li>ניהול מנהלים וצ'אטרים</li>
+        <li>ללא JWT — סיסמה בלבד</li>
+      </ul>
+    </div>
+    <div class="role-card" style="border-color:#22c55e">
+      <h3 style="color:#4ade80">💬 Chatter Login</h3>
+      <ul>
+        <li>לחצן "צ'אטר" בלוגין</li>
+        <li>הסיסמה נקבעת מה-Admin Panel</li>
+        <li>email: name@shiftpro.local</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<footer>
+  נוצר אוטומטית עבור eyal/review branch • ShiftPro System Map
+</footer>
+
+</body>
+</html>

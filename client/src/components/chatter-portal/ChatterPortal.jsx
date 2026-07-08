@@ -222,29 +222,39 @@ function SummaryWizard({ models, shiftId, onClose, onSuccess, setError }) {
             <h3 className="text-sm font-semibold text-blue-400">הכנסות</h3>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs text-gray-400 block mb-1">טלגרם $</label>
-                <input type="number" min="0" value={form.incomeTelegram} onChange={e => set('incomeTelegram', e.target.value)}
-                  className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500" />
+                <label className="text-xs text-gray-400 block mb-1">טלגרם <span className="text-yellow-500">€</span></label>
+                <div className="relative">
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-yellow-500 text-sm font-medium">€</span>
+                  <input type="number" min="0" value={form.incomeTelegram} onChange={e => set('incomeTelegram', e.target.value)}
+                    className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg pr-7 pl-3 py-2 text-sm focus:outline-none focus:border-blue-500" />
+                </div>
               </div>
               <div>
-                <label className="text-xs text-gray-400 block mb-1">אונליפאנס $</label>
-                <input type="number" min="0" value={form.incomeOnlyfans} onChange={e => set('incomeOnlyfans', e.target.value)}
-                  className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500" />
+                <label className="text-xs text-gray-400 block mb-1">אונליפאנס <span className="text-green-500">$</span></label>
+                <div className="relative">
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-green-500 text-sm font-medium">$</span>
+                  <input type="number" min="0" value={form.incomeOnlyfans} onChange={e => set('incomeOnlyfans', e.target.value)}
+                    className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg pr-7 pl-3 py-2 text-sm focus:outline-none focus:border-blue-500" />
+                </div>
               </div>
               <div>
-                <label className="text-xs text-gray-400 block mb-1">העברות $</label>
-                <input type="number" min="0" value={form.incomeTransfers} onChange={e => set('incomeTransfers', e.target.value)}
-                  className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500" />
+                <label className="text-xs text-gray-400 block mb-1">העברות בנקאיות <span className="text-blue-400">₪</span></label>
+                <div className="relative">
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-400 text-sm font-medium">₪</span>
+                  <input type="number" min="0" value={form.incomeTransfers} onChange={e => set('incomeTransfers', e.target.value)}
+                    className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg pr-7 pl-3 py-2 text-sm focus:outline-none focus:border-blue-500" />
+                </div>
+                <p className="text-xs text-gray-600 mt-0.5">כולל מע&quot;מ 18%</p>
               </div>
               <div>
-                <label className="text-xs text-gray-400 block mb-1">אחר $</label>
-                <input type="number" min="0" value={form.incomeOther} onChange={e => set('incomeOther', e.target.value)}
-                  className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500" />
+                <label className="text-xs text-gray-400 block mb-1">אחר <span className="text-blue-400">₪</span></label>
+                <div className="relative">
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-400 text-sm font-medium">₪</span>
+                  <input type="number" min="0" value={form.incomeOther} onChange={e => set('incomeOther', e.target.value)}
+                    className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg pr-7 pl-3 py-2 text-sm focus:outline-none focus:border-blue-500" />
+                </div>
+                <p className="text-xs text-gray-600 mt-0.5">כולל מע&quot;מ 18%</p>
               </div>
-            </div>
-            <div className="bg-gray-800 rounded-lg px-3 py-2 text-sm">
-              <span className="text-gray-400">סה&quot;כ: </span>
-              <span className="text-green-400 font-bold">${incomeTotal.toLocaleString()}</span>
             </div>
 
             <h3 className="text-sm font-semibold text-blue-400 pt-2">רפלקציה</h3>

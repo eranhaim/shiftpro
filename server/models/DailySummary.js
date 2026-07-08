@@ -26,11 +26,23 @@ const dailySummarySchema = new mongoose.Schema({
   hasUnusualEvents:    { type: Boolean, default: false },
   unusualEventsDetail: { type: String },
 
-  incomeTelegram:  { type: Number, default: 0 },
-  incomeOnlyfans:  { type: Number, default: 0 },
-  incomeTransfers: { type: Number, default: 0 },
-  incomeOther:     { type: Number, default: 0 },
+  // Raw values as entered by chatter (original currencies)
+  incomeTelegram:  { type: Number, default: 0 }, // EUR
+  incomeOnlyfans:  { type: Number, default: 0 }, // USD
+  incomeTransfers: { type: Number, default: 0 }, // ILS (before VAT)
+  incomeOther:     { type: Number, default: 0 }, // ILS (before VAT)
   incomeTotal:     { type: Number, default: 0 },
+
+  // Converted values in USD
+  incomeTelegramUSD:  { type: Number, default: 0 },
+  incomeOnlyfansUSD:  { type: Number, default: 0 },
+  incomeTransfersUSD: { type: Number, default: 0 },
+  incomeOtherUSD:     { type: Number, default: 0 },
+  incomeTotalUSD:     { type: Number, default: 0 },
+
+  // Exchange rates used
+  rateEURUSD: { type: Number },
+  rateILSUSD: { type: Number },
 
   allDepositsVerified: { type: Boolean, default: false },
 
