@@ -301,41 +301,58 @@ export default function DailySummaries() {
                   <th className="py-3 px-4 font-medium whitespace-nowrap">תאריך</th>
                   <th className="py-3 px-4 font-medium whitespace-nowrap">צ׳אטר</th>
                   <th className="py-3 px-4 font-medium whitespace-nowrap">משמרת</th>
-                  <th className="py-3 px-4 font-medium whitespace-nowrap">טלגרם</th>
-                  <th className="py-3 px-4 font-medium whitespace-nowrap">אונלי</th>
-                  <th className="py-3 px-4 font-medium whitespace-nowrap">העברות</th>
-                  <th className="py-3 px-4 font-medium whitespace-nowrap">אחר</th>
-                  <th className="py-3 px-4 font-medium whitespace-nowrap">סה"כ</th>
+                  <th className="py-3 px-4 font-medium whitespace-nowrap">טלגרם <span className="text-xs text-gray-600">(€→$)</span></th>
+                  <th className="py-3 px-4 font-medium whitespace-nowrap">אונלי <span className="text-xs text-gray-600">($)</span></th>
+                  <th className="py-3 px-4 font-medium whitespace-nowrap">העברות <span className="text-xs text-gray-600">(₪→$)</span></th>
+                  <th className="py-3 px-4 font-medium whitespace-nowrap">אחר <span className="text-xs text-gray-600">(₪→$)</span></th>
+                  <th className="py-3 px-4 font-medium whitespace-nowrap">סה"כ $</th>
                   <th className="py-3 px-4 font-medium whitespace-nowrap">פעולות</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-800">
-                {summaries.map((s) => (
-                  <tr key={s._id} className="hover:bg-gray-800/30 transition-colors">
-                    <td className="py-2.5 px-4 text-gray-300 whitespace-nowrap">{formatDate(s.date)}</td>
-                    <td className="py-2.5 px-4 text-white font-medium whitespace-nowrap">{s.chatterId?.name || 'לא ידוע'}</td>
-                    <td className="py-2.5 px-4 text-gray-400 whitespace-nowrap">{s.shiftType || '—'}</td>
-                    <td className="py-2.5 px-4 text-gray-300 whitespace-nowrap">${(s.incomeTelegram || 0).toLocaleString()}</td>
-                    <td className="py-2.5 px-4 text-gray-300 whitespace-nowrap">${(s.incomeOnlyfans || 0).toLocaleString()}</td>
-                    <td className="py-2.5 px-4 text-gray-300 whitespace-nowrap">${(s.incomeTransfers || 0).toLocaleString()}</td>
-                    <td className="py-2.5 px-4 text-gray-300 whitespace-nowrap">${(s.incomeOther || 0).toLocaleString()}</td>
-                    <td className="py-2.5 px-4 text-green-400 font-bold whitespace-nowrap">${(s.incomeTotal || 0).toLocaleString()}</td>
-                    <td className="py-2.5 px-4 whitespace-nowrap">
-                      <button onClick={() => openEdit(s)} className="text-gray-400 hover:text-blue-400 transition-colors" title="ערוך">
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                {summaries.map((s) => {
+                  const hasUSD = s.incomeTotalUSD != null && s.incomeTotalUSD > 0;
+                  return (
+                    <tr key={s._id} className="hover:bg-gray-800/30 transition-colors">
+                      <td className="py-2.5 px-4 text-gray-300 whitespace-nowrap">{formatDate(s.date)}</td>
+                      <td className="py-2.5 px-4 text-white font-medium whitespace-nowrap">{s.chatterId?.name || 'לא ידוע'}</td>
+                      <td className="py-2.5 px-4 text-gray-400 whitespace-nowrap">{s.shiftType || '—'}</td>
+                      <td className="py-2.5 px-4 whitespace-nowrap">
+                        <span className="text-gray-300">${(s.incomeTelegramUSD || 0).toFixed(2)}</span>
+                        <span className="text-gray-600 text-xs mr-1">(€{s.incomeTelegram || 0})</span>
+                      </td>
+                      <td className="py-2.5 px-4 whitespace-nowrap">
+                        <span className="text-gray-300">${(s.incomeOnlyfansUSD ?? s.incomeOnlyfans ?? 0).toFixed(2)}</span>
+                      </td>
+                      <td className="py-2.5 px-4 whitespace-nowrap">
+                        <span className="text-gray-300">${(s.incomeTransfersUSD || 0).toFixed(2)}</span>
+                        <span className="text-gray-600 text-xs mr-1">(₪{s.incomeTransfers || 0})</span>
+                      </td>
+                      <td className="py-2.5 px-4 whitespace-nowrap">
+                        <span className="text-gray-300">${(s.incomeOtherUSD || 0).toFixed(2)}</span>
+                        <span className="text-gray-600 text-xs mr-1">(₪{s.incomeOther || 0})</span>
+                      </td>
+                      <td className="py-2.5 px-4 whitespace-nowrap">
+                        <span className="text-green-400 font-bold">${(hasUSD ? s.incomeTotalUSD : s.incomeTotal || 0).toFixed(2)}</span>
+                        {!hasUSD && <span className="text-gray-600 text-xs mr-1">(ללא המרה)</span>}
+                      </td>
+                      <td className="py-2.5 px-4 whitespace-nowrap">
+                        <button onClick={() => openEdit(s)} className="text-gray-400 hover:text-blue-400 transition-colors" title="ערוך">
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
               <tfoot>
                 <tr className="bg-gray-800/50 font-bold text-white">
                   <td className="py-3 px-4" colSpan={3}>סה"כ</td>
-                  <td className="py-3 px-4">${totalTelegram.toLocaleString()}</td>
-                  <td className="py-3 px-4">${totalOnlyfans.toLocaleString()}</td>
-                  <td className="py-3 px-4">${totalTransfers.toLocaleString()}</td>
-                  <td className="py-3 px-4">${totalOther.toLocaleString()}</td>
-                  <td className="py-3 px-4 text-green-400">${totalIncome.toLocaleString()}</td>
+                  <td className="py-3 px-4">${summaries.reduce((s, r) => s + (r.incomeTelegramUSD || 0), 0).toFixed(2)}</td>
+                  <td className="py-3 px-4">${summaries.reduce((s, r) => s + (r.incomeOnlyfansUSD ?? r.incomeOnlyfans ?? 0), 0).toFixed(2)}</td>
+                  <td className="py-3 px-4">${summaries.reduce((s, r) => s + (r.incomeTransfersUSD || 0), 0).toFixed(2)}</td>
+                  <td className="py-3 px-4">${summaries.reduce((s, r) => s + (r.incomeOtherUSD || 0), 0).toFixed(2)}</td>
+                  <td className="py-3 px-4 text-green-400">${summaries.reduce((s, r) => s + (r.incomeTotalUSD || r.incomeTotal || 0), 0).toFixed(2)}</td>
                   <td></td>
                 </tr>
               </tfoot>
@@ -349,10 +366,10 @@ export default function DailySummaries() {
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-center gap-x-6 gap-y-1 text-sm" dir="rtl">
           <div className="text-gray-400 whitespace-nowrap">סיכומים <span className="text-white font-bold">{summaries.length}</span></div>
           <div className="text-gray-400 whitespace-nowrap">צ׳אטרים <span className="text-white font-bold">{uniqueChatters}</span></div>
-          <div className="text-gray-400 whitespace-nowrap">טלגרם <span className="text-white font-bold">${totalTelegram.toLocaleString()}</span></div>
-          <div className="text-gray-400 whitespace-nowrap">אונלי <span className="text-white font-bold">${totalOnlyfans.toLocaleString()}</span></div>
-          <div className="text-gray-400 whitespace-nowrap">העברות <span className="text-white font-bold">${totalTransfers.toLocaleString()}</span></div>
-          <div className="text-gray-400 whitespace-nowrap">סה"כ <span className="text-green-400 font-bold">${totalIncome.toLocaleString()}</span></div>
+          <div className="text-gray-400 whitespace-nowrap">טלגרם <span className="text-white font-bold">${summaries.reduce((s, r) => s + (r.incomeTelegramUSD || 0), 0).toFixed(2)}</span></div>
+          <div className="text-gray-400 whitespace-nowrap">אונלי <span className="text-white font-bold">${summaries.reduce((s, r) => s + (r.incomeOnlyfansUSD ?? r.incomeOnlyfans ?? 0), 0).toFixed(2)}</span></div>
+          <div className="text-gray-400 whitespace-nowrap">העברות <span className="text-white font-bold">${summaries.reduce((s, r) => s + (r.incomeTransfersUSD || 0), 0).toFixed(2)}</span></div>
+          <div className="text-gray-400 whitespace-nowrap">סה"כ <span className="text-green-400 font-bold">${summaries.reduce((s, r) => s + (r.incomeTotalUSD || r.incomeTotal || 0), 0).toFixed(2)}</span></div>
         </div>
       </div>
 

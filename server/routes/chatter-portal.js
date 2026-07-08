@@ -9,6 +9,41 @@ import Model from '../models/Model.js';
 
 const router = Router();
 
+async function fetchExchangeRates() {
+  try {
+    const res = await fetch('https://api.frankfurter.app/latest?from=USD&to=EUR,ILS');
+    if (!res.ok) throw new Error('Frankfurter API error');
+    const data = await res.json();
+    // data.rates: { EUR: x, ILS: y } — these are "how many EUR/ILS per 1 USD"
+    const eurPerUSD = data.rates.EUR;
+    const ilsPerUSD = data.rates.ILS;
+    return {
+      rateEURUSD: 1 / eurPerUSD,   // how many USD per 1 EUR
+      rateILSUSD: 1 / ilsPerUSD,   // how many USD per 1 ILS
+    };
+  } catch (err) {
+    console.error('[Exchange] Failed to fetch rates:', err.message);
+    // Fallback rates
+    return { rateEURUSD: 1.08, rateILSUSD: 0.027 };
+  }
+}
+
+function calculateUSD({ incomeTelegram, incomeOnlyfans, incomeTransfers, incomeOther }, { rateEURUSD, rateILSUSD }) {
+  const VAT = 1.18;
+  const telegramUSD  = Number(incomeTelegram)  * rateEURUSD;
+  const onlyfansUSD  = Number(incomeOnlyfans);
+  const transfersUSD = (Number(incomeTransfers) / VAT) * rateILSUSD;
+  const otherUSD     = (Number(incomeOther)     / VAT) * rateILSUSD;
+  const totalUSD     = telegramUSD + onlyfansUSD + transfersUSD + otherUSD;
+  return {
+    incomeTelegramUSD:  Math.round(telegramUSD  * 100) / 100,
+    incomeOnlyfansUSD:  Math.round(onlyfansUSD  * 100) / 100,
+    incomeTransfersUSD: Math.round(transfersUSD * 100) / 100,
+    incomeOtherUSD:     Math.round(otherUSD     * 100) / 100,
+    incomeTotalUSD:     Math.round(totalUSD     * 100) / 100,
+  };
+}
+
 function chatterAuth(req, res, next) {
   try {
     const authHeader = req.headers.authorization;
@@ -78,6 +113,14 @@ router.post('/submit-summary', async (req, res) => {
       return res.status(400).json({ message: 'Date is required' });
     }
 
+    const rates = await fetchExchangeRates();
+    const usd = calculateUSD({
+      incomeTelegram:  b.incomeTelegram  || 0,
+      incomeOnlyfans:  b.incomeOnlyfans  || 0,
+      incomeTransfers: b.incomeTransfers || 0,
+      incomeOther:     b.incomeOther     || 0,
+    }, rates);
+
     const summary = await DailySummary.create({
       chatterId: req.chatter.id,
       shiftId: b.shiftId || undefined,
@@ -93,11 +136,14 @@ router.post('/submit-summary', async (req, res) => {
       pendingSalesDetail: b.pendingSalesDetail,
       hasUnusualEvents: b.hasUnusualEvents || false,
       unusualEventsDetail: b.unusualEventsDetail,
-      incomeTelegram: Number(b.incomeTelegram) || 0,
-      incomeOnlyfans: Number(b.incomeOnlyfans) || 0,
+      incomeTelegram:  Number(b.incomeTelegram)  || 0,
+      incomeOnlyfans:  Number(b.incomeOnlyfans)  || 0,
       incomeTransfers: Number(b.incomeTransfers) || 0,
-      incomeOther: Number(b.incomeOther) || 0,
+      incomeOther:     Number(b.incomeOther)     || 0,
       incomeTotal: (Number(b.incomeTelegram) || 0) + (Number(b.incomeOnlyfans) || 0) + (Number(b.incomeTransfers) || 0) + (Number(b.incomeOther) || 0),
+      ...usd,
+      rateEURUSD: rates.rateEURUSD,
+      rateILSUSD: rates.rateILSUSD,
       allDepositsVerified: b.allDepositsVerified || false,
       improvementSuggestions: b.improvementSuggestions,
       contentRequest: b.contentRequest,
