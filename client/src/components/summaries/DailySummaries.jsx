@@ -421,21 +421,21 @@ export default function DailySummaries() {
                     <label className="text-xs text-gray-400 block mb-1">טלגרם <span className="text-yellow-500">€</span></label>
                     <div className="relative">
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-yellow-500 text-sm font-medium">€</span>
-                      <input type="number" min="0" value={form.incomeTelegram} onChange={(e) => setForm({ ...form, incomeTelegram: e.target.value })} className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg pr-7 pl-3 py-2 text-sm focus:outline-none focus:border-blue-500" />
+                      <input type="number" min="0" value={form.incomeTelegram} onChange={(e) => setForm({ ...form, incomeTelegram: e.target.value })} onFocus={(e) => e.target.select()} onClick={(e) => e.target.select()} className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg pr-7 pl-3 py-2 text-sm focus:outline-none focus:border-blue-500" />
                     </div>
                   </div>
                   <div>
                     <label className="text-xs text-gray-400 block mb-1">אונליפאנס <span className="text-green-500">$</span></label>
                     <div className="relative">
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-green-500 text-sm font-medium">$</span>
-                      <input type="number" min="0" value={form.incomeOnlyfans} onChange={(e) => setForm({ ...form, incomeOnlyfans: e.target.value })} className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg pr-7 pl-3 py-2 text-sm focus:outline-none focus:border-blue-500" />
+                      <input type="number" min="0" value={form.incomeOnlyfans} onChange={(e) => setForm({ ...form, incomeOnlyfans: e.target.value })} onFocus={(e) => e.target.select()} onClick={(e) => e.target.select()} className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg pr-7 pl-3 py-2 text-sm focus:outline-none focus:border-blue-500" />
                     </div>
                   </div>
                   <div>
                     <label className="text-xs text-gray-400 block mb-1">העברות בנקאיות <span className="text-blue-400">₪</span></label>
                     <div className="relative">
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-400 text-sm font-medium">₪</span>
-                      <input type="number" min="0" value={form.incomeTransfers} onChange={(e) => setForm({ ...form, incomeTransfers: e.target.value })} className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg pr-7 pl-3 py-2 text-sm focus:outline-none focus:border-blue-500" />
+                      <input type="number" min="0" value={form.incomeTransfers} onChange={(e) => setForm({ ...form, incomeTransfers: e.target.value })} onFocus={(e) => e.target.select()} onClick={(e) => e.target.select()} className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg pr-7 pl-3 py-2 text-sm focus:outline-none focus:border-blue-500" />
                     </div>
                     <p className="text-xs text-gray-600 mt-0.5">כולל מע&quot;מ 18%</p>
                   </div>
@@ -443,7 +443,7 @@ export default function DailySummaries() {
                     <label className="text-xs text-gray-400 block mb-1">אחר <span className="text-blue-400">₪</span></label>
                     <div className="relative">
                       <span className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-400 text-sm font-medium">₪</span>
-                      <input type="number" min="0" value={form.incomeOther} onChange={(e) => setForm({ ...form, incomeOther: e.target.value })} className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg pr-7 pl-3 py-2 text-sm focus:outline-none focus:border-blue-500" />
+                      <input type="number" min="0" value={form.incomeOther} onChange={(e) => setForm({ ...form, incomeOther: e.target.value })} onFocus={(e) => e.target.select()} onClick={(e) => e.target.select()} className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg pr-7 pl-3 py-2 text-sm focus:outline-none focus:border-blue-500" />
                     </div>
                     <p className="text-xs text-gray-600 mt-0.5">כולל מע&quot;מ 18%</p>
                   </div>

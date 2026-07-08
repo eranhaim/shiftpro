@@ -56,11 +56,11 @@ function EditChatterModal({ chatter, onClose, onSaved }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-3 sm:p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-3 sm:p-4" onMouseDown={onClose}>
       <div
         className="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-md flex flex-col overflow-hidden"
         dir="rtl"
-        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-800 shrink-0">
           <h2 className="text-lg font-bold text-white flex items-center gap-2">
