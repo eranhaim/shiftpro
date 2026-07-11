@@ -48,7 +48,10 @@ const THIN_BORDER = {
 };
 
 function toISODate(d) {
-  return d.toISOString().split('T')[0];
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 function platformLabel(platform) {
@@ -152,7 +155,7 @@ export default async function exportShiftsExcel(weekStart, shifts) {
       ws.mergeCells(startRow, 1, endRow, 1);
     }
     const dayCell = ws.getCell(startRow, 1);
-    dayCell.value = DAY_NAMES_FULL[dayIdx];
+    dayCell.value = DAY_NAMES_FULL[day.getDay()];
     dayCell.font = DAY_FONT;
     dayCell.fill = DAY_FILL;
     dayCell.alignment = { horizontal: 'center', vertical: 'middle', readingOrder: 'rtl', wrapText: true };

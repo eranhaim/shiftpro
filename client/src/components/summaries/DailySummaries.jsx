@@ -187,20 +187,26 @@ export default function DailySummaries() {
 
   // Export to CSV
   const exportCSV = () => {
-    const headers = ['תאריך', 'צ׳אטר', 'סוג משמרת', 'טלגרם', 'אונליפאנס', 'העברות', 'אחר', 'סה"כ', 'זמינות'];
+    const headers = ['תאריך', 'צ׳אטר', 'סוג משמרת', 'טלגרם ($)', 'אונליפאנס ($)', 'העברות ($)', 'אחר ($)', 'סה"כ ($)', 'זמינות'];
     const rows = summaries.map((s) => [
       formatDate(s.date),
       s.chatterId?.name || 'לא ידוע',
       s.shiftType || '',
-      s.incomeTelegram || 0,
-      s.incomeOnlyfans || 0,
-      s.incomeTransfers || 0,
-      s.incomeOther || 0,
-      s.incomeTotal || 0,
+      Math.round(s.incomeTelegramUSD || 0),
+      Math.round(s.incomeOnlyfansUSD ?? s.incomeOnlyfans ?? 0),
+      Math.round(s.incomeTransfersUSD || 0),
+      Math.round(s.incomeOtherUSD || 0),
+      Math.round(s.incomeTotalUSD || s.incomeTotal || 0),
       s.availabilityStatus || '',
     ]);
 
-    rows.push(['', '', '', totalTelegram, totalOnlyfans, totalTransfers, totalOther, totalIncome, '']);
+    const totalTelegramUSD = summaries.reduce((s, r) => s + (r.incomeTelegramUSD || 0), 0);
+    const totalOnlyfansUSD = summaries.reduce((s, r) => s + (r.incomeOnlyfansUSD ?? r.incomeOnlyfans ?? 0), 0);
+    const totalTransfersUSD = summaries.reduce((s, r) => s + (r.incomeTransfersUSD || 0), 0);
+    const totalOtherUSD = summaries.reduce((s, r) => s + (r.incomeOtherUSD || 0), 0);
+    const totalIncomeUSD = summaries.reduce((s, r) => s + (r.incomeTotalUSD || r.incomeTotal || 0), 0);
+
+    rows.push(['', '', '', Math.round(totalTelegramUSD), Math.round(totalOnlyfansUSD), Math.round(totalTransfersUSD), Math.round(totalOtherUSD), Math.round(totalIncomeUSD), '']);
 
     const BOM = '\uFEFF';
     const csv = BOM + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
