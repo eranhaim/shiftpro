@@ -14,7 +14,7 @@ const DAY_NAMES_FULL = [
 const HEADER_FILL = {
   type: 'pattern',
   pattern: 'solid',
-  fgColor: { argb: 'FF0D7377' },
+  fgColor: { argb: 'FF4A5D80' },
 };
 
 const DAY_FILL = {
@@ -23,21 +23,13 @@ const DAY_FILL = {
   fgColor: { argb: 'FFD6EAF8' },
 };
 
-const DATA_FILL_EVEN = {
-  type: 'pattern',
-  pattern: 'solid',
-  fgColor: { argb: 'FFF8F9FA' },
-};
-
-const DATA_FILL_ODD = {
-  type: 'pattern',
-  pattern: 'solid',
-  fgColor: { argb: 'FFFFFFFF' },
-};
+// ירוק בהיר לימים זוגיים, כחול בהיר לימים אי-זוגיים
+const DAY_COLOR_EVEN = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8F5E9' } }; // ירוק
+const DAY_COLOR_ODD  = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE3F2FD' } }; // כחול
 
 const HEADER_FONT = { bold: true, color: { argb: 'FFFFFFFF' }, size: 12, name: 'Arial' };
 const SUB_HEADER_FONT = { bold: true, color: { argb: 'FFFFFFFF' }, size: 11, name: 'Arial' };
-const DAY_FONT = { bold: true, size: 11, name: 'Arial', color: { argb: 'FF1B4F72' } };
+const DAY_FONT = { bold: true, size: 11, name: 'Arial', color: { argb: 'FF000000' } };
 const DATA_FONT = { size: 10, name: 'Arial' };
 
 const THIN_BORDER = {
@@ -72,8 +64,12 @@ function getShiftsForDayType(shifts, date, type) {
 }
 
 /**
- * @param {Date} weekStart
- * @param {Array} shifts - array of shift objects with populated chatterId and assignments
+ * Column layout (RTL view):
+ * A = ימים          ← מימין ביותר בתצוגת RTL
+ * B = צ'אטר (צהריים)
+ * C = מיוצגת + פלטפורמה (צהריים)
+ * D = צ'אטר (ערב)
+ * E = מיוצגת + פלטפורמה (ערב)
  */
 export default async function exportShiftsExcel(weekStart, shifts) {
   const wb = new ExcelJS.Workbook();
@@ -83,17 +79,15 @@ export default async function exportShiftsExcel(weekStart, shifts) {
     views: [{ rightToLeft: true }],
   });
 
-  // Column widths (A=ימים, B=צ'אטר morning, C=מיוצגת morning, D=צ'אטר evening, E=מיוצגת evening)
   ws.columns = [
-    { width: 16 },
-    { width: 18 },
-    { width: 40 },
-    { width: 18 },
-    { width: 40 },
+    { width: 16 }, // A - ימים
+    { width: 18 }, // B - צ'אטר צהריים
+    { width: 65 }, // C - מיוצגת צהריים
+    { width: 18 }, // D - צ'אטר ערב
+    { width: 65 }, // E - מיוצגת ערב
   ];
 
   // --- Row 1: main headers ---
-  const headerRow1 = ws.getRow(1);
   ws.mergeCells('A1:A2');
   ws.getCell('A1').value = 'ימים';
   ws.getCell('A1').font = HEADER_FONT;
@@ -117,14 +111,17 @@ export default async function exportShiftsExcel(weekStart, shifts) {
   ws.getCell('D1').border = THIN_BORDER;
   ws.getCell('E1').border = THIN_BORDER;
 
-  headerRow1.height = 30;
+  ws.getRow(1).height = 30;
 
   // --- Row 2: sub-headers ---
-  const subHeaders = ['', "צ'אטר", 'מיוצגת + פלטפורמה', "צ'אטר", 'מיוצגת + פלטפורמה'];
   const headerRow2 = ws.getRow(2);
-  subHeaders.forEach((text, i) => {
-    if (i === 0) return; // A2 is merged with A1
-    const cell = headerRow2.getCell(i + 1);
+  [
+    { col: 'B', text: "צ'אטר" },
+    { col: 'C', text: 'מיוצגת + פלטפורמה' },
+    { col: 'D', text: "צ'אטר" },
+    { col: 'E', text: 'מיוצגת + פלטפורמה' },
+  ].forEach(({ col, text }) => {
+    const cell = ws.getCell(`${col}2`);
     cell.value = text;
     cell.font = SUB_HEADER_FONT;
     cell.fill = HEADER_FILL;
@@ -150,46 +147,52 @@ export default async function exportShiftsExcel(weekStart, shifts) {
     const startRow = currentRow;
     const endRow = currentRow + rowCount - 1;
 
-    // Merge day name cell vertically
+    const dayFill = dayIdx % 2 === 0 ? DAY_COLOR_EVEN : DAY_COLOR_ODD;
+
+    // Merge day name cell (col A) vertically
     if (rowCount > 1) {
       ws.mergeCells(startRow, 1, endRow, 1);
     }
     const dayCell = ws.getCell(startRow, 1);
     dayCell.value = DAY_NAMES_FULL[day.getDay()];
     dayCell.font = DAY_FONT;
-    dayCell.fill = DAY_FILL;
+    dayCell.fill = dayFill;
     dayCell.alignment = { horizontal: 'center', vertical: 'middle', readingOrder: 'rtl', wrapText: true };
     dayCell.border = THIN_BORDER;
 
     for (let r = 0; r < rowCount; r++) {
       const rowNum = startRow + r;
       const row = ws.getRow(rowNum);
-      const fill = r % 2 === 0 ? DATA_FILL_EVEN : DATA_FILL_ODD;
+      const fill = dayFill;
 
-      // Day column: apply fill/border to merged area cells too
       if (r > 0) {
         const dc = ws.getCell(rowNum, 1);
-        dc.fill = DAY_FILL;
-        dc.border = THIN_BORDER;
+        dc.fill = dayFill;
+        dc.border = {
+          top: { style: 'thin', color: { argb: 'FFB0B0B0' } },
+          left: { style: 'thin', color: { argb: 'FFB0B0B0' } },
+          bottom: { style: 'thin', color: { argb: 'FFB0B0B0' } },
+          right: { style: 'thin', color: { argb: 'FFB0B0B0' } },
+        };
       }
 
-      // Morning shift data
+      // Morning: B = צ'אטר, C = מיוצגת
       const mShift = morningShifts[r];
-      const mChatterCell = row.getCell(2);
-      const mModelsCell = row.getCell(3);
+      const mChatterCell = row.getCell(2); // B
+      const mModelsCell = row.getCell(3);  // C
 
       if (mShift) {
         mChatterCell.value = mShift.chatterId?.name || '';
         const modelsList = (mShift.assignments || [])
           .map((a) => `${a.modelName || a.model?.name || ''} – ${platformLabel(a.platform)}`)
-          .join(', ');
+          .join(' | ');
         mModelsCell.value = modelsList;
       } else {
         mChatterCell.value = '';
         mModelsCell.value = '';
       }
 
-      mChatterCell.font = DATA_FONT;
+      mChatterCell.font = { ...DATA_FONT, bold: true };
       mChatterCell.fill = fill;
       mChatterCell.alignment = { horizontal: 'right', vertical: 'middle', readingOrder: 'rtl', wrapText: true };
       mChatterCell.border = THIN_BORDER;
@@ -199,23 +202,23 @@ export default async function exportShiftsExcel(weekStart, shifts) {
       mModelsCell.alignment = { horizontal: 'right', vertical: 'middle', readingOrder: 'rtl', wrapText: true };
       mModelsCell.border = THIN_BORDER;
 
-      // Evening shift data
+      // Evening: D = צ'אטר, E = מיוצגת
       const eShift = eveningShifts[r];
-      const eChatterCell = row.getCell(4);
-      const eModelsCell = row.getCell(5);
+      const eChatterCell = row.getCell(4); // D
+      const eModelsCell = row.getCell(5);  // E
 
       if (eShift) {
         eChatterCell.value = eShift.chatterId?.name || '';
         const modelsList = (eShift.assignments || [])
           .map((a) => `${a.modelName || a.model?.name || ''} – ${platformLabel(a.platform)}`)
-          .join(', ');
+          .join(' | ');
         eModelsCell.value = modelsList;
       } else {
         eChatterCell.value = '';
         eModelsCell.value = '';
       }
 
-      eChatterCell.font = DATA_FONT;
+      eChatterCell.font = { ...DATA_FONT, bold: true };
       eChatterCell.fill = fill;
       eChatterCell.alignment = { horizontal: 'right', vertical: 'middle', readingOrder: 'rtl', wrapText: true };
       eChatterCell.border = THIN_BORDER;
@@ -225,10 +228,23 @@ export default async function exportShiftsExcel(weekStart, shifts) {
       eModelsCell.alignment = { horizontal: 'right', vertical: 'middle', readingOrder: 'rtl', wrapText: true };
       eModelsCell.border = THIN_BORDER;
 
-      row.height = 24;
+
+      row.height = 16;
     }
 
     currentRow = endRow + 1;
+
+    // שורה לבנה בין ימים
+    if (dayIdx < days.length - 1) {
+      const sepRow = ws.getRow(currentRow);
+      sepRow.height = 16;
+      for (let colNum = 1; colNum <= 5; colNum++) {
+        const cell = ws.getCell(currentRow, colNum);
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFFFF' } };
+        cell.border = {};
+      }
+      currentRow += 1;
+    }
   });
 
   const buffer = await wb.xlsx.writeBuffer();
