@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { X, CheckCircle, XCircle, Loader2, User, Calendar, Clock, AlertTriangle, Save } from 'lucide-react';
+import { X, CheckCircle, XCircle, Loader2, User, Calendar, Clock, AlertTriangle, Save, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { getModels, getAssignmentsForSlot, approveShift, rejectShift, updateShiftAssignments } from '../../services/api.js';
+import { getModels, getAssignmentsForSlot, approveShift, rejectShift, updateShiftAssignments, deleteShift } from '../../services/api.js';
 
 const DAY_NAMES = ['יום א׳', 'יום ב׳', 'יום ג׳', 'יום ד׳', 'יום ה׳', 'יום ו׳', 'שבת'];
 
@@ -18,7 +18,7 @@ function getShiftLabel(startTime) {
   return startTime === '12:00' ? 'בוקר (12:00–19:00)' : 'לילה (19:00–02:00)';
 }
 
-export default function ShiftApprovalModal({ shift, onClose, onApproved, onRejected, onSaved }) {
+export default function ShiftApprovalModal({ shift, onClose, onApproved, onRejected, onSaved, onDeleted }) {
   const isEditMode = shift.status !== 'pending';
 
   const [models, setModels] = useState([]);
@@ -28,6 +28,7 @@ export default function ShiftApprovalModal({ shift, onClose, onApproved, onRejec
   const [approving, setApproving] = useState(false);
   const [rejecting, setRejecting] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [showRejectInput, setShowRejectInput] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
 
@@ -130,8 +131,22 @@ export default function ShiftApprovalModal({ shift, onClose, onApproved, onRejec
     }
   }
 
+  async function handleDelete() {
+    if (!window.confirm('האם אתה בטוח שברצונך למחוק את המשמרת?')) return;
+    setDeleting(true);
+    try {
+      await deleteShift(shift._id);
+      toast.success('המשמרת נמחקה');
+      onDeleted?.(shift._id);
+    } catch (err) {
+      toast.error(err.message || 'שגיאה במחיקת המשמרת');
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   const chatterName = shift.chatterId?.name || 'צ׳אטר לא ידוע';
-  const isBusy = approving || rejecting || saving;
+  const isBusy = approving || rejecting || saving || deleting;
 
   return (
     <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-3 sm:p-4" onClick={onClose}>
@@ -268,6 +283,14 @@ export default function ShiftApprovalModal({ shift, onClose, onApproved, onRejec
 
         {/* Footer */}
         <div className="flex items-center gap-3 px-5 py-4 border-t border-gray-800 shrink-0">
+          <button
+            onClick={handleDelete}
+            disabled={isBusy}
+            className="bg-red-900/20 hover:bg-red-900/40 border border-red-800/50 disabled:opacity-50 text-red-500 py-2.5 px-3 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2 shrink-0"
+            title="מחק משמרת"
+          >
+            {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+          </button>
           {isEditMode ? (
             <button
               onClick={handleSaveChanges}

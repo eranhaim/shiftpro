@@ -178,6 +178,15 @@ export async function generateWeekShifts(weekStart) {
   return res.json();
 }
 
+export async function deleteShift(id) {
+  const res = await fetch(`${API}/shifts/${id}`, {
+    method: 'DELETE',
+    headers: getHeaders(),
+  });
+  if (!res.ok) throw new Error('Failed to delete shift');
+  return res.json();
+}
+
 // Shift Assignments
 export async function getShiftAssignments(shiftId) {
   const params = new URLSearchParams({ shiftId });

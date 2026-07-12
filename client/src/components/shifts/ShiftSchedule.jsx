@@ -279,6 +279,10 @@ export default function ShiftSchedule() {
             setSelectedShift(null);
             fetchData();
           }}
+          onDeleted={() => {
+            setSelectedShift(null);
+            fetchData();
+          }}
         />
       )}
 
