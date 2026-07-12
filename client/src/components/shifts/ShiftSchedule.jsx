@@ -258,6 +258,7 @@ export default function ShiftSchedule() {
                       ) : (
                         dayShifts.map((shift) => {
                           const isPending = shift.status === "pending";
+                          const isOverloaded = (shift.assignments || []).length >= 3;
                           return (
                             <div
                               key={shift._id}
@@ -266,12 +267,14 @@ export default function ShiftSchedule() {
                                 setSelectedShift(shift);
                               }}
                               className={`rounded-lg p-2 mb-1 overflow-hidden cursor-pointer transition-colors ${
-                                isPending
+                                isOverloaded
+                                  ? "bg-red-900/20 border-2 border-red-500/60 hover:border-red-400"
+                                  : isPending
                                   ? "bg-yellow-900/20 border-2 border-yellow-500/60 hover:border-yellow-400"
                                   : "bg-gray-800 border border-gray-700 hover:border-gray-500 hover:bg-gray-750"
                               }`}
                             >
-                              <p className="text-sm font-bold text-white truncate">
+                              <p className={`text-sm font-bold truncate ${isOverloaded ? "text-red-400" : "text-white"}`}>
                                 {shift.chatterId?.name || "צ׳אטר"}
                               </p>
                               <div className="mt-1">
