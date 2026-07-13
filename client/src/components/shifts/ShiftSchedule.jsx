@@ -243,7 +243,7 @@ export default function ShiftSchedule() {
                   return (
                     <div
                       key={idx}
-                      className="bg-gray-900 border border-gray-800 p-2 rounded-lg min-h-[100px] cursor-pointer hover:border-gray-600 transition-colors"
+                      className="bg-gray-900 border border-gray-800 p-2 rounded-lg min-h-[100px] cursor-pointer hover:border-gray-600 transition-colors flex flex-col justify-between"
                       onClick={() =>
                         setCreateSlot({
                           date: toISODate(day),
@@ -256,44 +256,67 @@ export default function ShiftSchedule() {
                           —
                         </p>
                       ) : (
-                        dayShifts.map((shift) => {
-                          const isPending = shift.status === "pending";
-                          const isOverloaded = (shift.assignments || []).length >= 3;
-                          return (
-                            <div
-                              key={shift._id}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedShift(shift);
-                              }}
-                              className={`rounded-lg p-2 mb-1 overflow-hidden cursor-pointer transition-colors ${
-                                isOverloaded
-                                  ? "bg-red-900/20 border-2 border-red-500/60 hover:border-red-400"
-                                  : isPending
-                                  ? "bg-yellow-900/20 border-2 border-yellow-500/60 hover:border-yellow-400"
-                                  : "bg-gray-800 border border-gray-700 hover:border-gray-500 hover:bg-gray-750"
-                              }`}
-                            >
-                              <p className={`text-sm font-bold truncate ${isOverloaded ? "text-red-400" : "text-white"}`}>
-                                {shift.chatterId?.name || "צ׳אטר"}
-                              </p>
-                              <div className="mt-1">
-                                {getStatusBadge(shift.status)}
-                              </div>
-                              {(shift.assignments || []).map((a, ai) => (
-                                <p
-                                  key={ai}
-                                  className="text-xs text-gray-400 mt-1 truncate"
-                                >
-                                  {a.modelName || a.model?.name} -{" "}
-                                  {a.platform === "telegram"
-                                    ? "טלגרם"
-                                    : "אונליפאנס"}
+                        <>
+                          {dayShifts.map((shift) => {
+                            const isPending = shift.status === "pending";
+                            const isOverloaded = (shift.assignments || []).length >= 3;
+                            return (
+                              <div
+                                key={shift._id}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedShift(shift);
+                                }}
+                                className={`rounded-lg p-2 mb-1 overflow-hidden cursor-pointer transition-colors ${
+                                  isOverloaded
+                                    ? "bg-red-900/20 border-2 border-red-500/60 hover:border-red-400"
+                                    : isPending
+                                    ? "bg-yellow-900/20 border-2 border-yellow-500/60 hover:border-yellow-400"
+                                    : "bg-gray-800 border border-gray-700 hover:border-gray-500 hover:bg-gray-750"
+                                }`}
+                              >
+                                <p className={`text-sm font-bold truncate ${isOverloaded ? "text-red-400" : "text-white"}`}>
+                                  {shift.chatterId?.name || "צ׳אטר"}
                                 </p>
-                              ))}
-                            </div>
-                          );
-                        })
+                                <div className="mt-1">
+                                  {getStatusBadge(shift.status)}
+                                </div>
+                                {(shift.assignments || []).map((a, ai) => (
+                                  <p key={ai} className="text-xs text-gray-400 mt-1 truncate">
+                                    {a.modelName || a.model?.name} -{" "}
+                                    {a.platform === "telegram" ? "טלגרם" : "אונליפאנס"}
+                                  </p>
+                                ))}
+                              </div>
+                            );
+                          })}
+                          {/* מיוצגות לא מכוסות */}
+                          {(() => {
+                            const coveredKeys = new Set(
+                              dayShifts.flatMap((s) =>
+                                (s.assignments || []).map((a) => `${a.modelId}:${a.platform}`)
+                              )
+                            );
+                            const uncoveredEntries = [];
+                            models.forEach((m) => {
+                              if (m.platforms?.telegram && !coveredKeys.has(`${m._id}:telegram`))
+                                uncoveredEntries.push({ name: m.name, platform: 'טלגרם', id: `${m._id}:telegram` });
+                              if (m.platforms?.onlyfans && !coveredKeys.has(`${m._id}:onlyfans`))
+                                uncoveredEntries.push({ name: m.name, platform: 'אונלי', id: `${m._id}:onlyfans` });
+                            });
+                            if (uncoveredEntries.length === 0) return null;
+                            return (
+                              <div className="mt-2 pt-2 border-t border-gray-800">
+                                <p className="text-xs text-orange-400 font-semibold mb-1">לא מיוצגות</p>
+                                {uncoveredEntries.map((e) => (
+                                  <p key={e.id} className="text-xs text-orange-400/70 truncate leading-loose">
+                                    {e.name} - {e.platform}
+                                  </p>
+                                ))}
+                              </div>
+                            );
+                          })()}
+                        </>
                       )}
                     </div>
                   );
