@@ -79,6 +79,7 @@ export default function DailySummaries() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [filterActive, setFilterActive] = useState(false);
+  const [filterChatter, setFilterChatter] = useState("");
 
   // View modal
   const [viewingSummary, setViewingSummary] = useState(null);
@@ -121,6 +122,10 @@ export default function DailySummaries() {
   };
 
   const handleFilter = () => {
+    if (startDate && endDate && startDate > endDate) {
+      setStartDate(endDate);
+      setEndDate(startDate);
+    }
     setFilterActive(true);
   };
 
@@ -338,43 +343,6 @@ export default function DailySummaries() {
         </div>
       </div>
 
-      {/* Date Filter */}
-      <div className="bg-gray-900 rounded-xl p-4 flex flex-wrap items-end gap-3 min-w-0">
-        <Filter className="w-5 h-5 text-gray-400 shrink-0" />
-        <div className="min-w-0">
-          <label className="text-xs text-gray-400 block mb-1">מתאריך</label>
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            className="w-full max-w-[160px] bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500"
-          />
-        </div>
-        <div className="min-w-0">
-          <label className="text-xs text-gray-400 block mb-1">עד תאריך</label>
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            className="w-full max-w-[160px] bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500"
-          />
-        </div>
-        <button
-          onClick={handleFilter}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-lg text-sm transition-colors shrink-0"
-        >
-          סנן
-        </button>
-        {filterActive && (
-          <button
-            onClick={clearFilter}
-            className="text-gray-400 hover:text-white text-sm flex items-center gap-1 transition-colors shrink-0"
-          >
-            <X className="w-3 h-3" />
-            נקה
-          </button>
-        )}
-      </div>
 
       {error && (
         <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-2 rounded-lg text-sm">
@@ -422,12 +390,52 @@ export default function DailySummaries() {
       </div>
 
       {/* Summaries Table */}
-      {summaries.length > 0 && (
+      {(
         <div className="bg-gray-900 rounded-xl overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-800">
+          <div className="px-6 py-4 border-b border-gray-800 flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-lg font-bold text-white">
-              סיכומים ({summaries.length})
+              סיכומים ({summaries.filter(s => !filterChatter || (s.chatterId?._id || s.chatterId) === filterChatter).length})
             </h2>
+            <div className="flex flex-wrap items-center gap-2">
+              <select
+                value={filterChatter}
+                onChange={(e) => setFilterChatter(e.target.value)}
+                className="bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500"
+              >
+                <option value="">כל הצ׳אטרים</option>
+                {chatters.map((c) => (
+                  <option key={c._id} value={c._id}>{c.name}</option>
+                ))}
+              </select>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500"
+              />
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500"
+              />
+              <button
+                onClick={handleFilter}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-sm transition-colors flex items-center gap-1"
+              >
+                <Filter className="w-3.5 h-3.5" />
+                סנן
+              </button>
+              {(filterActive || filterChatter) && (
+                <button
+                  onClick={() => { clearFilter(); setFilterChatter(""); }}
+                  className="text-gray-400 hover:text-white flex items-center gap-1 text-sm"
+                >
+                  <X className="w-3.5 h-3.5" />
+                  נקה
+                </button>
+              )}
+            </div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-right text-sm">
@@ -463,7 +471,12 @@ export default function DailySummaries() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-800">
-                {summaries.map((s) => {
+                {summaries.filter(s => !filterChatter || (s.chatterId?._id || s.chatterId) === filterChatter).length === 0 && (
+                  <tr>
+                    <td colSpan={9} className="py-10 text-center text-gray-500 text-sm">אין סיכומים להצגה</td>
+                  </tr>
+                )}
+                {summaries.filter(s => !filterChatter || (s.chatterId?._id || s.chatterId) === filterChatter).map((s) => {
                   const hasUSD =
                     s.incomeTotalUSD != null && s.incomeTotalUSD > 0;
                   return (
@@ -531,10 +544,10 @@ export default function DailySummaries() {
                       <td className="py-2.5 px-4 whitespace-nowrap">
                         <button
                           onClick={() => setViewingSummary(s)}
-                          className="text-gray-400 hover:text-blue-400 transition-colors"
-                          title="צפה בדו״ח"
+                          className="text-gray-400 hover:text-blue-400 transition-colors text-xs flex items-center gap-1 whitespace-nowrap"
                         >
-                          <FileText className="w-4 h-4" />
+                          <FileText className="w-3.5 h-3.5" />
+                          דו"ח מלא
                         </button>
                       </td>
                     </tr>
@@ -549,12 +562,14 @@ export default function DailySummaries() {
                   <td className="py-3 px-4">
                     $
                     {summaries
+                      .filter(s => !filterChatter || (s.chatterId?._id || s.chatterId) === filterChatter)
                       .reduce((s, r) => s + (r.incomeTelegramUSD || 0), 0)
                       .toFixed(2)}
                   </td>
                   <td className="py-3 px-4">
                     $
                     {summaries
+                      .filter(s => !filterChatter || (s.chatterId?._id || s.chatterId) === filterChatter)
                       .reduce(
                         (s, r) =>
                           s + (r.incomeOnlyfansUSD ?? r.incomeOnlyfans ?? 0),
@@ -565,18 +580,21 @@ export default function DailySummaries() {
                   <td className="py-3 px-4">
                     $
                     {summaries
+                      .filter(s => !filterChatter || (s.chatterId?._id || s.chatterId) === filterChatter)
                       .reduce((s, r) => s + (r.incomeTransfersUSD || 0), 0)
                       .toFixed(2)}
                   </td>
                   <td className="py-3 px-4">
                     $
                     {summaries
+                      .filter(s => !filterChatter || (s.chatterId?._id || s.chatterId) === filterChatter)
                       .reduce((s, r) => s + (r.incomeOtherUSD || 0), 0)
                       .toFixed(2)}
                   </td>
                   <td className="py-3 px-4 text-green-400">
                     $
                     {summaries
+                      .filter(s => !filterChatter || (s.chatterId?._id || s.chatterId) === filterChatter)
                       .reduce(
                         (s, r) => s + (r.incomeTotalUSD || r.incomeTotal || 0),
                         0,
