@@ -243,7 +243,7 @@ export default function ShiftSchedule() {
                   return (
                     <div
                       key={idx}
-                      className="bg-gray-900 border border-gray-800 p-2 rounded-lg min-h-[100px] cursor-pointer hover:border-gray-600 transition-colors flex flex-col justify-between"
+                      className="bg-gray-900 border border-gray-800 p-2 rounded-lg min-h-[100px] cursor-pointer hover:border-gray-600 transition-colors flex flex-col justify-start"
                       onClick={() =>
                         setCreateSlot({
                           date: toISODate(day),
@@ -306,7 +306,7 @@ export default function ShiftSchedule() {
                             });
                             if (uncoveredEntries.length === 0) return null;
                             return (
-                              <div className="mt-2 pt-2 border-t border-gray-800">
+                              <div className="mt-auto pt-2 border-t border-gray-800">
                                 <p className="text-xs text-orange-400 font-semibold mb-1">לא מיוצגות</p>
                                 {uncoveredEntries.map((e) => (
                                   <p key={e.id} className="text-xs text-orange-400/70 truncate leading-loose">
