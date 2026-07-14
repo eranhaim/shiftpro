@@ -36,6 +36,8 @@ function EditChatterModal({ chatter, onClose, onSaved }) {
   const [goalId, setGoalId] = useState(null);
   const [loadingGoal, setLoadingGoal] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [editingPassword, setEditingPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     getMonthlyGoalForChatter(chatter._id, getCurrentMonth())
@@ -130,13 +132,45 @@ function EditChatterModal({ chatter, onClose, onSaved }) {
 
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1.5">סיסמה</label>
-            <input
-              type="password"
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              placeholder="השאר ריק אם לא רוצה לשנות"
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 text-sm transition-colors"
-            />
+            {!editingPassword ? (
+              <div className="flex items-center gap-2 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5">
+                <span className="flex-1 text-sm tracking-widest text-gray-400 select-none">
+                  {showPassword && chatter.rawPassword ? chatter.rawPassword : '••••••••'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="text-gray-500 hover:text-gray-300 transition-colors"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setEditingPassword(true); setShowPassword(false); }}
+                  className="text-blue-400 hover:text-blue-300 transition-colors"
+                >
+                  <Pencil className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  placeholder="הזן סיסמה חדשה"
+                  autoFocus
+                  className="w-full bg-gray-800 border border-blue-500 rounded-lg px-3 py-2.5 text-white placeholder-gray-500 focus:outline-none text-sm transition-colors pl-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            )}
           </div>
 
           <div>
