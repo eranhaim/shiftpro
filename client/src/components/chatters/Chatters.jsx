@@ -24,7 +24,7 @@ function getCurrentMonth() {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
 }
 
-function EditChatterModal({ chatter, onClose, onSaved }) {
+function EditChatterModal({ chatter, onClose, onSaved, onDelete }) {
   const [form, setForm] = useState({
     name: chatter.name || '',
     email: chatter.email || '',
@@ -213,21 +213,31 @@ function EditChatterModal({ chatter, onClose, onSaved }) {
           </div>
         </div>
 
-        <div className="px-5 py-4 border-t border-gray-800 shrink-0 flex gap-3">
+        <div className="px-5 py-4 border-t border-gray-800 shrink-0 space-y-2">
+          <div className="flex gap-3">
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white py-2.5 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2"
+            >
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              {saving ? 'שומר...' : 'שמור'}
+            </button>
+            <button
+              onClick={onClose}
+              disabled={saving}
+              className="flex-1 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-white py-2.5 rounded-xl text-sm font-medium transition-colors"
+            >
+              ביטול
+            </button>
+          </div>
           <button
-            onClick={handleSave}
+            onClick={onDelete}
             disabled={saving}
-            className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white py-2.5 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2"
+            className="w-full flex items-center justify-center gap-2 text-red-400 hover:text-red-300 hover:bg-red-400/10 disabled:opacity-50 py-2 rounded-xl text-sm font-medium transition-colors"
           >
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            {saving ? 'שומר...' : 'שמור'}
-          </button>
-          <button
-            onClick={onClose}
-            disabled={saving}
-            className="flex-1 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 text-white py-2.5 rounded-xl text-sm font-medium transition-colors"
-          >
-            ביטול
+            <Trash2 className="w-4 h-4" />
+            מחק צ׳אטר
           </button>
         </div>
       </div>
@@ -291,7 +301,6 @@ export default function Chatters() {
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [copiedId, setCopiedId] = useState(null);
-  const [visiblePasswords, setVisiblePasswords] = useState({});
   const [editingChatter, setEditingChatter] = useState(null);
   const [deletingChatter, setDeletingChatter] = useState(null);
 
@@ -440,12 +449,11 @@ export default function Chatters() {
                 <tr className="bg-gray-800/50 text-gray-400 text-sm">
                   <th className="py-3 px-4 font-medium whitespace-nowrap">שם</th>
                   <th className="py-3 px-4 font-medium whitespace-nowrap">טלפון</th>
-                  <th className="py-3 px-4 font-medium whitespace-nowrap">סיסמה</th>
                   <th className="py-3 px-4 font-medium whitespace-nowrap">כניסה אחרונה לאפליקציה</th>
                   <th className="py-3 px-4 font-medium whitespace-nowrap">יעד חודשי</th>
                   <th className="py-3 px-4 font-medium whitespace-nowrap">TIER</th>
                   <th className="py-3 px-4 font-medium whitespace-nowrap">לינק אישי</th>
-                  <th className="py-3 px-4 font-medium whitespace-nowrap">פעולות</th>
+                  <th className="py-3 px-4 font-medium whitespace-nowrap">עריכה</th>
                 </tr>
               </thead>
               <tbody>
@@ -458,21 +466,6 @@ export default function Chatters() {
                       )}
                     </td>
                     <td className="py-3 px-4 text-gray-300 whitespace-nowrap">{c.phone || '—'}</td>
-                    <td className="py-3 px-4 whitespace-nowrap">
-                      {c.rawPassword ? (
-                        <span className="flex items-center gap-1.5">
-                          <button onClick={() => setVisiblePasswords(p => ({ ...p, [c._id]: !p[c._id] }))}
-                            className="text-gray-500 hover:text-gray-300 transition-colors">
-                            {visiblePasswords[c._id] ? <EyeOff size={14} /> : <Eye size={14} />}
-                          </button>
-                          <span className="text-xs font-mono text-amber-400">
-                            {visiblePasswords[c._id] ? c.rawPassword : '••••••••'}
-                          </span>
-                        </span>
-                      ) : (
-                        <span className="text-gray-600 text-xs">—</span>
-                      )}
-                    </td>
                     <td className="py-3 px-4 text-gray-400 text-sm whitespace-nowrap">{formatLastLogin(c.lastSignInAt)}</td>
                     <td className="py-3 px-4 whitespace-nowrap">
                       {(() => {
@@ -522,13 +515,6 @@ export default function Chatters() {
                         >
                           <Pencil className="w-4 h-4" />
                         </button>
-                        <button
-                          onClick={() => setDeletingChatter(c)}
-                          className="text-red-500 hover:text-red-400 p-1.5 rounded-lg hover:bg-red-400/10 transition-colors"
-                          title="מחק"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
                       </div>
                     </td>
                   </tr>
@@ -544,6 +530,7 @@ export default function Chatters() {
           chatter={editingChatter}
           onClose={() => setEditingChatter(null)}
           onSaved={handleEditSaved}
+          onDelete={() => { setDeletingChatter(editingChatter); setEditingChatter(null); }}
         />
       )}
 
