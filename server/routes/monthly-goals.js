@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import MonthlyGoal from '../models/MonthlyGoal.js';
+import DailySummary from '../models/DailySummary.js';
 import auth from '../middleware/auth.js';
 
 const router = Router();
@@ -46,6 +47,53 @@ router.put('/:id', async (req, res) => {
     );
     if (!goal) return res.status(404).json({ message: 'Goal not found' });
     res.json(goal);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// GET /api/monthly-goals/progress?month=YYYY-MM-01
+// מחזיר לכל צ'אטר: יעד + הכנסה מצטברת בחודש
+router.get('/progress', async (req, res) => {
+  try {
+    const month = req.query.month;
+    if (!month) return res.status(400).json({ message: 'month is required' });
+
+    const [year, m] = month.split('-').map(Number);
+    const monthStart = new Date(year, m - 1, 1);
+    const monthEnd = new Date(year, m, 1);
+
+    const [goals, incomeByChatter] = await Promise.all([
+      MonthlyGoal.find({ month }).populate('chatterId', 'name'),
+      DailySummary.aggregate([
+        { $match: { date: { $gte: monthStart, $lt: monthEnd } } },
+        { $group: { _id: '$chatterId', earned: { $sum: '$incomeTotal' } } },
+      ]),
+    ]);
+
+    const earnedMap = {};
+    for (const row of incomeByChatter) {
+      if (row._id) earnedMap[row._id.toString()] = row.earned;
+    }
+
+    const result = goals.map((g) => {
+      const chatterId = g.chatterId?._id?.toString() || g.chatterId?.toString();
+      return {
+        chatterId,
+        chatterName: g.chatterId?.name,
+        goalAmount: g.goalAmount,
+        earned: earnedMap[chatterId] || 0,
+      };
+    });
+
+    // צ'אטרים שיש להם הכנסה אבל אין יעד
+    for (const [id, earned] of Object.entries(earnedMap)) {
+      if (!result.find((r) => r.chatterId === id)) {
+        result.push({ chatterId: id, chatterName: null, goalAmount: null, earned });
+      }
+    }
+
+    res.json(result);
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }

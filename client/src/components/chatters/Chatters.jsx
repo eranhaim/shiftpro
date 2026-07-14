@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { UserPlus, Trash2, Copy, Check, Eye, EyeOff, Pencil, X, Save, Loader2 } from 'lucide-react';
+import { UserPlus, Trash2, Copy, Check, Eye, EyeOff, Pencil, X, Save, Loader2, Target } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { getChatters, createChatter, updateChatter, deleteChatter } from '../../services/api.js';
+import { getChatters, createChatter, updateChatter, deleteChatter, getMonthlyGoals, getMonthlyGoalsProgress, getMonthlyGoalForChatter, upsertMonthlyGoal } from '../../services/api.js';
 
 function Spinner() {
   return (
@@ -19,6 +19,11 @@ function formatLastLogin(dateStr) {
   return `${d.getDate()}.${d.getMonth() + 1}.${d.getFullYear()}`;
 }
 
+function getCurrentMonth() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+}
+
 function EditChatterModal({ chatter, onClose, onSaved }) {
   const [form, setForm] = useState({
     name: chatter.name || '',
@@ -26,8 +31,23 @@ function EditChatterModal({ chatter, onClose, onSaved }) {
     phone: chatter.phone || '',
     password: '',
     active: chatter.active !== false,
+    monthlyGoal: '',
   });
+  const [goalId, setGoalId] = useState(null);
+  const [loadingGoal, setLoadingGoal] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    getMonthlyGoalForChatter(chatter._id, getCurrentMonth())
+      .then((goal) => {
+        if (goal) {
+          setGoalId(goal._id);
+          setForm((f) => ({ ...f, monthlyGoal: goal.goalAmount ?? '' }));
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoadingGoal(false));
+  }, [chatter._id]);
 
   const handleSave = async () => {
     if (!form.name.trim()) {
@@ -45,7 +65,12 @@ function EditChatterModal({ chatter, onClose, onSaved }) {
       if (form.password.trim()) {
         payload.password = form.password;
       }
-      const updated = await updateChatter(chatter._id, payload);
+      const [updated] = await Promise.all([
+        updateChatter(chatter._id, payload),
+        form.monthlyGoal !== ''
+          ? upsertMonthlyGoal({ chatterId: chatter._id, month: getCurrentMonth(), goalAmount: Number(form.monthlyGoal) })
+          : Promise.resolve(),
+      ]);
       toast.success('הצ׳אטר עודכן בהצלחה');
       onSaved(updated);
     } catch (err) {
@@ -112,6 +137,28 @@ function EditChatterModal({ chatter, onClose, onSaved }) {
               placeholder="השאר ריק אם לא רוצה לשנות"
               className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 text-sm transition-colors"
             />
+          </div>
+
+          <div>
+            <label className="flex items-center gap-1.5 text-sm font-medium text-gray-300 mb-1.5">
+              <Target className="w-4 h-4 text-yellow-400" />
+              יעד חודשי (₪) — {new Date().toLocaleString('he-IL', { month: 'long', year: 'numeric' })}
+            </label>
+            {loadingGoal ? (
+              <div className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 flex items-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin text-gray-500" />
+                <span className="text-gray-500 text-sm">טוען...</span>
+              </div>
+            ) : (
+              <input
+                type="number"
+                min="0"
+                value={form.monthlyGoal}
+                onChange={(e) => setForm({ ...form, monthlyGoal: e.target.value })}
+                placeholder="0"
+                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:border-yellow-500 text-sm transition-colors"
+              />
+            )}
           </div>
 
           <div className="flex items-center justify-between bg-gray-800/50 border border-gray-700/50 rounded-xl p-4">
@@ -205,6 +252,7 @@ function DeleteConfirmModal({ chatterName, onConfirm, onClose }) {
 
 export default function Chatters() {
   const [chatters, setChatters] = useState([]);
+  const [goalsProgress, setGoalsProgress] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -219,8 +267,17 @@ export default function Chatters() {
     try {
       setLoading(true);
       setError(null);
-      const data = await getChatters();
+      const currentMonth = getCurrentMonth();
+      const [data, progress] = await Promise.all([
+        getChatters(),
+        getMonthlyGoalsProgress(currentMonth).catch(() => []),
+      ]);
       setChatters(Array.isArray(data) ? data : []);
+      const progressMap = {};
+      (Array.isArray(progress) ? progress : []).forEach((g) => {
+        if (g.chatterId) progressMap[g.chatterId] = { earned: g.earned, goalAmount: g.goalAmount };
+      });
+      setGoalsProgress(progressMap);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -262,6 +319,14 @@ export default function Chatters() {
   const handleEditSaved = (updated) => {
     setChatters((prev) => prev.map((c) => c._id === updated._id ? updated : c));
     setEditingChatter(null);
+    // רענן יעדים חודשיים
+    getMonthlyGoalsProgress(getCurrentMonth()).then((progress) => {
+      const progressMap = {};
+      (Array.isArray(progress) ? progress : []).forEach((g) => {
+        if (g.chatterId) progressMap[g.chatterId] = { earned: g.earned, goalAmount: g.goalAmount };
+      });
+      setGoalsProgress(progressMap);
+    }).catch(() => {});
   };
 
   const handleTierChange = async (id, tier) => {
@@ -343,6 +408,7 @@ export default function Chatters() {
                   <th className="py-3 px-4 font-medium whitespace-nowrap">טלפון</th>
                   <th className="py-3 px-4 font-medium whitespace-nowrap">סיסמה</th>
                   <th className="py-3 px-4 font-medium whitespace-nowrap">כניסה אחרונה לאפליקציה</th>
+                  <th className="py-3 px-4 font-medium whitespace-nowrap">יעד חודשי</th>
                   <th className="py-3 px-4 font-medium whitespace-nowrap">TIER</th>
                   <th className="py-3 px-4 font-medium whitespace-nowrap">לינק אישי</th>
                   <th className="py-3 px-4 font-medium whitespace-nowrap">פעולות</th>
@@ -374,6 +440,27 @@ export default function Chatters() {
                       )}
                     </td>
                     <td className="py-3 px-4 text-gray-400 text-sm whitespace-nowrap">{formatLastLogin(c.lastSignInAt)}</td>
+                    <td className="py-3 px-4 whitespace-nowrap">
+                      {(() => {
+                        const p = goalsProgress[c._id];
+                        if (!p) return <span className="text-gray-600 text-sm">—</span>;
+                        const earned = p.earned || 0;
+                        const goal = p.goalAmount;
+                        const pct = goal > 0 ? Math.min(Math.round((earned / goal) * 100), 100) : null;
+                        return (
+                          <span className="text-sm font-medium">
+                            <span className={pct != null && pct >= 100 ? 'text-green-400' : 'text-white'}>
+                              ₪{earned.toLocaleString()}
+                            </span>
+                            {goal != null && (
+                              <span className="text-gray-500">
+                                {' / '}₪{goal.toLocaleString()}
+                              </span>
+                            )}
+                          </span>
+                        );
+                      })()}
+                    </td>
                     <td className="py-3 px-4">
                       <select
                         value={c.tier || 'אוטומטי'}

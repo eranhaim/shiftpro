@@ -263,6 +263,14 @@ export async function getMonthlyGoals(month) {
   return res.json();
 }
 
+export async function getMonthlyGoalForChatter(chatterId, month) {
+  const params = new URLSearchParams({ month });
+  const res = await fetch(`${API}/monthly-goals?${params}`, { headers: getHeaders() });
+  if (!res.ok) throw new Error('Failed to fetch monthly goals');
+  const goals = await res.json();
+  return goals.find((g) => (g.chatterId?._id || g.chatterId) === chatterId) || null;
+}
+
 export async function upsertMonthlyGoal(data) {
   const res = await fetch(`${API}/monthly-goals`, {
     method: 'POST',
@@ -280,6 +288,13 @@ export async function updateMonthlyGoal(id, data) {
     body: JSON.stringify(data),
   });
   if (!res.ok) throw new Error('Failed to update monthly goal');
+  return res.json();
+}
+
+export async function getMonthlyGoalsProgress(month) {
+  const params = new URLSearchParams({ month });
+  const res = await fetch(`${API}/monthly-goals/progress?${params}`, { headers: getHeaders() });
+  if (!res.ok) throw new Error('Failed to fetch monthly goals progress');
   return res.json();
 }
 
