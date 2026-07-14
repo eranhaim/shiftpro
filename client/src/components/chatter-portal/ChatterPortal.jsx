@@ -526,20 +526,74 @@ export default function ChatterPortal() {
                 </div>
                 <div className="bg-gray-900 border border-gray-800 rounded-lg p-3">
                   <div className="flex items-center gap-2 text-gray-400 text-xs mb-1">
-                    <Target className="w-3.5 h-3.5" /> יעד חודשי
+                    <Target className="w-3.5 h-3.5" /> הכנסה החודש
                   </div>
-                  {monthlyGoal ? (
-                    <>
-                      <span className="text-xl font-bold text-white">{monthlyGoal.current}/{monthlyGoal.target}</span>
-                      <div className="w-full bg-gray-800 rounded-full h-1.5 mt-2">
-                        <div className="bg-blue-500 h-1.5 rounded-full transition-all" style={{ width: `${Math.min(100, (monthlyGoal.current / monthlyGoal.target) * 100)}%` }} />
-                      </div>
-                    </>
-                  ) : (
-                    <span className="text-xl font-bold text-white">–</span>
-                  )}
+                  <span className="text-xl font-bold text-white">
+                    {monthlyGoal ? `₪${(monthlyGoal.currentIncome || 0).toLocaleString()}` : '–'}
+                  </span>
                 </div>
               </div>
+
+              {/* Monthly goal progress card */}
+              {monthlyGoal && (
+                <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-white">
+                      <Target className="w-4 h-4 text-yellow-400" />
+                      יעד חודשי
+                    </div>
+                    {monthlyGoal.goalAmount > 0 && (
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                        monthlyGoal.currentIncome >= monthlyGoal.goalAmount
+                          ? 'bg-green-500/20 text-green-400'
+                          : 'bg-gray-800 text-gray-400'
+                      }`}>
+                        {Math.round((monthlyGoal.currentIncome / monthlyGoal.goalAmount) * 100)}%
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex items-end justify-between gap-2">
+                    <div>
+                      <span className="text-2xl font-bold text-white">
+                        ₪{(monthlyGoal.currentIncome || 0).toLocaleString()}
+                      </span>
+                      {monthlyGoal.goalAmount > 0 && (
+                        <span className="text-gray-500 text-sm mr-1">
+                          {' / '}₪{monthlyGoal.goalAmount.toLocaleString()}
+                        </span>
+                      )}
+                    </div>
+                    {monthlyGoal.goalAmount > 0 && monthlyGoal.currentIncome < monthlyGoal.goalAmount && (
+                      <span className="text-xs text-gray-500 mb-1">
+                        נותרו ₪{(monthlyGoal.goalAmount - monthlyGoal.currentIncome).toLocaleString()}
+                      </span>
+                    )}
+                  </div>
+
+                  {monthlyGoal.goalAmount > 0 ? (
+                    <div className="space-y-1">
+                      <div className="w-full bg-gray-800 rounded-full h-3 overflow-hidden">
+                        <div
+                          className={`h-3 rounded-full transition-all duration-500 ${
+                            monthlyGoal.currentIncome >= monthlyGoal.goalAmount
+                              ? 'bg-green-500'
+                              : monthlyGoal.currentIncome / monthlyGoal.goalAmount > 0.7
+                              ? 'bg-yellow-500'
+                              : 'bg-blue-500'
+                          }`}
+                          style={{ width: `${Math.min(100, (monthlyGoal.currentIncome / monthlyGoal.goalAmount) * 100)}%` }}
+                        />
+                      </div>
+                      {monthlyGoal.currentIncome >= monthlyGoal.goalAmount && (
+                        <p className="text-xs text-green-400 font-medium">היעד הושג!</p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-gray-600">לא הוגדר יעד לחודש זה</p>
+                  )}
+                </div>
+              )}
 
               {/* Next shift */}
               {nextShift && nextShift._id && (
