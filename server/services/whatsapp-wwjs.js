@@ -26,6 +26,10 @@ function createClient() {
         '--disable-dev-shm-usage',
         '--disable-gpu',
         '--single-process',
+        '--no-zygote',
+        '--disable-extensions',
+        '--disable-software-rasterizer',
+        '--disable-dbus',
       ],
       executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
     },
@@ -90,13 +94,10 @@ export async function connect() {
 
   if (!client) createClient();
 
-  try {
-    await client.initialize();
-  } catch (err) {
+  client.initialize().catch((err) => {
     console.error('[WhatsApp] Initialize error:', err.message);
     initializing = false;
-    throw err;
-  }
+  });
 
   return { message: 'Initializing... QR code will appear shortly' };
 }

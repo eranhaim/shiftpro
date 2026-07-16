@@ -340,6 +340,7 @@ export default function Chatters() {
               <thead>
                 <tr className="bg-gray-800/50 text-gray-400 text-sm">
                   <th className="py-3 px-4 font-medium whitespace-nowrap">שם</th>
+                  <th className="py-3 px-4 font-medium whitespace-nowrap">אימייל</th>
                   <th className="py-3 px-4 font-medium whitespace-nowrap">טלפון</th>
                   <th className="py-3 px-4 font-medium whitespace-nowrap">סיסמה</th>
                   <th className="py-3 px-4 font-medium whitespace-nowrap">כניסה אחרונה לאפליקציה</th>
@@ -357,6 +358,7 @@ export default function Chatters() {
                         <span className="mr-2 text-xs text-red-400 bg-red-400/10 px-1.5 py-0.5 rounded">לא פעיל</span>
                       )}
                     </td>
+                    <td className="py-3 px-4 text-gray-400 text-sm whitespace-nowrap">{c.email || '—'}</td>
                     <td className="py-3 px-4 text-gray-300 whitespace-nowrap">{c.phone || '—'}</td>
                     <td className="py-3 px-4 whitespace-nowrap">
                       {c.rawPassword ? (
