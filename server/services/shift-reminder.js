@@ -1,8 +1,7 @@
 import cron from 'node-cron';
 import Shift from '../models/Shift.js';
 import Chatter from '../models/Chatter.js';
-
-const WHATSAPP_SERVICE = 'http://localhost:4001';
+import { sendMessage, getStatus } from './whatsapp-wwjs.js';
 
 function formatDate(date) {
   const d = new Date(date);
@@ -14,24 +13,14 @@ function getShiftType(startTime) {
   return hour < 15 ? 'בוקר' : 'ערב';
 }
 
-async function sendWhatsApp(phone, message) {
-  const res = await fetch(`${WHATSAPP_SERVICE}/send`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ phone, message }),
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`WhatsApp send failed (${res.status}): ${text}`);
-  }
-  return res.json();
-}
-
 async function checkAndSendReminders() {
   try {
+    const status = getStatus();
+    if (!status.connected) return;
+
     const now = new Date();
-    const from = new Date(now.getTime() + 25 * 60 * 1000);
-    const to = new Date(now.getTime() + 35 * 60 * 1000);
+    const from = new Date(now.getTime() + 8 * 60 * 1000);
+    const to = new Date(now.getTime() + 16 * 60 * 1000);
 
     const todayStart = new Date(now);
     todayStart.setHours(0, 0, 0, 0);
@@ -56,10 +45,10 @@ async function checkAndSendReminders() {
 
       const shiftType = getShiftType(shift.startTime);
       const dateStr = formatDate(shift.date);
-      const message = `היי ${chatter.name}! תזכורת: המשמרת שלך מתחילה בעוד 30 דקות (${shiftType} ${dateStr}). בהצלחה! 🎯`;
+      const message = `היי ${chatter.name}! תזכורת: המשמרת שלך מתחילה בעוד כ-15 דקות (${shiftType} ${dateStr}). בהצלחה! 🎯`;
 
       try {
-        await sendWhatsApp(chatter.phone, message);
+        await sendMessage(chatter.phone, message);
         shift.reminded = true;
         await shift.save();
         console.log(`[shift-reminder] Sent reminder to ${chatter.name} (${chatter.phone}) for shift at ${shift.startTime}`);
