@@ -360,18 +360,6 @@ export default function DailySummaries() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          {selectedChatterId && (
-            <button
-              onClick={() => {
-                setSelectedChatterId(null);
-                clearFilter();
-              }}
-              className="flex items-center gap-1.5 text-sm text-gray-300 hover:text-white bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded-lg transition-colors border border-gray-700"
-            >
-              <ChevronRight className="w-4 h-4" />
-              חזרה
-            </button>
-          )}
           <div>
             <h1 className="text-2xl font-bold text-white">
               {selectedChatterData
@@ -423,39 +411,6 @@ export default function DailySummaries() {
       {/* ===== MAIN VIEW: Chatter Grid ===== */}
       {!selectedChatterId && (
         <>
-          {/* Debts Section */}
-          {debts.length > 0 && (
-            <div className="bg-gray-900 rounded-xl p-6">
-              <div className="flex items-center gap-3 mb-2">
-                <h2 className="text-lg font-bold text-white">חובות סיכום יום</h2>
-                <span className="bg-red-600 text-white text-xs px-2 py-0.5 rounded-full">
-                  {debts.length}
-                </span>
-              </div>
-              <p className="text-sm text-gray-400 mb-4">
-                משמרות שחייבים סיכום ועדיין לא הוגש:
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {debts.slice(0, 12).map((debt, i) => (
-                  <div
-                    key={debt._id || i}
-                    className="bg-gray-800 border border-gray-700 rounded-lg p-4 min-w-0"
-                  >
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <p className="font-bold text-white truncate">
-                        {debt.chatterId?.name || "לא ידוע"}
-                      </p>
-                      <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
-                    </div>
-                    <p className="text-sm text-gray-400">{formatDate(debt.date)}</p>
-                    <p className="text-sm text-gray-500">
-                      {formatTime(debt.startTime)} - {formatTime(debt.endTime)}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Chatter Grid */}
           <div>
@@ -488,21 +443,21 @@ export default function DailySummaries() {
 
                       {/* Platform breakdown */}
                       <div className="grid grid-cols-2 gap-1.5 -mt-2 mb-5">
-                        <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg px-2 py-1.5 text-center">
-                          <p className="text-xs text-blue-400 font-medium">${Math.round(monthlyTelegram)}</p>
-                          <p className="text-xs text-gray-600">טלגרם</p>
+                        <div className="bg-blue-500/15 border border-blue-500/25 rounded-lg px-2 py-1.5 text-center">
+                          <p className="text-xs text-blue-300 font-medium">${Math.round(monthlyTelegram)}</p>
+                          <p className="text-xs text-gray-500">טלגרם</p>
                         </div>
-                        <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-lg px-2 py-1.5 text-center">
-                          <p className="text-xs text-cyan-400 font-medium">${Math.round(monthlyOnlyfans)}</p>
-                          <p className="text-xs text-gray-600">אונלי</p>
+                        <div className="bg-cyan-500/15 border border-cyan-500/25 rounded-lg px-2 py-1.5 text-center">
+                          <p className="text-xs text-cyan-300 font-medium">${Math.round(monthlyOnlyfans)}</p>
+                          <p className="text-xs text-gray-500">אונלי</p>
                         </div>
-                        <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg px-2 py-1.5 text-center">
-                          <p className="text-xs text-purple-400 font-medium">${Math.round(monthlyTransfers)}</p>
-                          <p className="text-xs text-gray-600">העברות</p>
+                        <div className="bg-purple-500/15 border border-purple-500/25 rounded-lg px-2 py-1.5 text-center">
+                          <p className="text-xs text-purple-300 font-medium">${Math.round(monthlyTransfers)}</p>
+                          <p className="text-xs text-gray-500">העברות</p>
                         </div>
-                        <div className="bg-gray-500/10 border border-gray-500/20 rounded-lg px-2 py-1.5 text-center">
-                          <p className="text-xs text-gray-400 font-medium">${Math.round(monthlyOther)}</p>
-                          <p className="text-xs text-gray-600">אחר</p>
+                        <div className="bg-gray-500/20 border border-gray-500/30 rounded-lg px-2 py-1.5 text-center">
+                          <p className="text-xs text-gray-300 font-medium">${Math.round(monthlyOther)}</p>
+                          <p className="text-xs text-gray-500">אחר</p>
                         </div>
                       </div>
 
@@ -542,7 +497,7 @@ export default function DailySummaries() {
             )}
           </div>
 
-          {/* Summaries Table */}
+          {/* Summaries Table - DISABLED
           <div className="bg-gray-900 rounded-xl overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-800 flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-lg font-bold text-white">
@@ -675,6 +630,7 @@ export default function DailySummaries() {
               </table>
             </div>
           </div>
+          DISABLED */}
         </>
       )}
 
@@ -709,36 +665,48 @@ export default function DailySummaries() {
             </div>
           )}
 
-          {/* Filters */}
-          <div className="flex flex-wrap items-center gap-2">
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500"
-            />
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500"
-            />
+          {/* Filters + Back */}
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <button
-              onClick={handleFilter}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-sm transition-colors flex items-center gap-1"
+              onClick={() => {
+                setSelectedChatterId(null);
+                clearFilter();
+              }}
+              className="flex items-center gap-1.5 text-sm text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-lg transition-colors"
             >
-              <Filter className="w-3.5 h-3.5" />
-              סנן
+              <ChevronRight className="w-4 h-4" />
+              חזרה
             </button>
-            {filterActive && (
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500"
+              />
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500"
+              />
               <button
-                onClick={clearFilter}
-                className="text-gray-400 hover:text-white flex items-center gap-1 text-sm"
+                onClick={handleFilter}
+                className="bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 rounded-lg text-sm transition-colors flex items-center gap-1"
               >
-                <X className="w-3.5 h-3.5" />
-                נקה
+                <Filter className="w-3.5 h-3.5" />
+                סנן
               </button>
-            )}
+              {filterActive && (
+                <button
+                  onClick={clearFilter}
+                  className="text-gray-400 hover:text-white flex items-center gap-1 text-sm"
+                >
+                  <X className="w-3.5 h-3.5" />
+                  נקה
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Shifts list */}

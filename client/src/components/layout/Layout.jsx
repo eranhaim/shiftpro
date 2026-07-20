@@ -24,13 +24,17 @@ const pages = {
 
 export default function Layout() {
   const [activePage, setActivePageRaw] = useState(() => localStorage.getItem('activePage') || 'dashboard');
+  const [pageKey, setPageKey] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
 
   const setActivePage = useCallback((page) => {
     localStorage.setItem('activePage', page);
+    if (page === activePage) {
+      setPageKey(k => k + 1);
+    }
     setActivePageRaw(page);
-  }, []);
+  }, [activePage]);
 
   const PageComponent = pages[activePage] || Dashboard;
 
@@ -56,7 +60,7 @@ export default function Layout() {
         </div>
 
         <main className="flex-1 overflow-y-auto overflow-x-hidden bg-gray-950 pt-[52px] pb-[60px] lg:pt-0 lg:pb-0">
-          <PageComponent onNavigate={setActivePage} />
+          <PageComponent key={pageKey} onNavigate={setActivePage} />
         </main>
 
         <MobileNav activePage={activePage} onNavigate={setActivePage} />
