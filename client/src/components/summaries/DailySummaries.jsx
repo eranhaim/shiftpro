@@ -11,6 +11,8 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
+  ChevronRight,
+  User,
 } from "lucide-react";
 import {
   getDailySummaries,
@@ -75,6 +77,9 @@ export default function DailySummaries() {
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Selected chatter view
+  const [selectedChatterId, setSelectedChatterId] = useState(null);
+
   // Filters
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -135,33 +140,10 @@ export default function DailySummaries() {
     setFilterActive(false);
   };
 
-  // Calculate totals from actual DB fields
-  const totalTelegram = summaries.reduce(
-    (sum, s) => sum + (s.incomeTelegram || 0),
-    0,
-  );
-  const totalOnlyfans = summaries.reduce(
-    (sum, s) => sum + (s.incomeOnlyfans || 0),
-    0,
-  );
-  const totalTransfers = summaries.reduce(
-    (sum, s) => sum + (s.incomeTransfers || 0),
-    0,
-  );
-  const totalOther = summaries.reduce(
-    (sum, s) => sum + (s.incomeOther || 0),
-    0,
-  );
-  const totalIncome =
-    totalTelegram + totalOnlyfans + totalTransfers + totalOther;
-  const uniqueChatters = new Set(
-    summaries.map((s) => s.chatterId?._id || s.chatterId),
-  ).size;
-
   // Form handlers
-  const openCreate = () => {
+  const openCreate = (chatterId = "") => {
     setEditingId(null);
-    setForm(EMPTY_FORM);
+    setForm({ ...EMPTY_FORM, chatterId });
     setShowForm(true);
   };
 
@@ -304,33 +286,96 @@ export default function DailySummaries() {
     URL.revokeObjectURL(url);
   };
 
+  // Build per-chatter stats for the grid view
+  const chatterStats = chatters.map((chatter) => {
+    const chatterSummaries = summaries.filter(
+      (s) => (s.chatterId?._id || s.chatterId) === chatter._id,
+    );
+    const chatterDebts = debts.filter(
+      (d) => (d.chatterId?._id || d.chatterId) === chatter._id,
+    );
+    const totalUSD = chatterSummaries.reduce(
+      (sum, s) => sum + (s.incomeTotalUSD || s.incomeTotal || 0),
+      0,
+    );
+    const lastSummary = chatterSummaries.sort(
+      (a, b) => new Date(b.date) - new Date(a.date),
+    )[0];
+    return {
+      chatter,
+      summaries: chatterSummaries,
+      debts: chatterDebts,
+      totalUSD,
+      lastSummary,
+    };
+  });
+
+  // Selected chatter data
+  const selectedChatterData = selectedChatterId
+    ? chatterStats.find((cs) => cs.chatter._id === selectedChatterId)
+    : null;
+
+  const chatterSummaries = selectedChatterData
+    ? selectedChatterData.summaries
+        .filter((s) => {
+          if (!filterActive) return true;
+          const d = new Date(s.date);
+          if (startDate && d < new Date(startDate)) return false;
+          if (endDate && d > new Date(endDate)) return false;
+          return true;
+        })
+        .sort((a, b) => new Date(b.date) - new Date(a.date))
+    : [];
+
   if (loading) return <Spinner />;
 
   return (
     <div className="space-y-6 pb-24 p-4 lg:p-6" dir="rtl">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-white">סיכומי יום</h1>
-          <p className="text-gray-400 text-sm mt-1">
-            סיכומי הכנסות לפי צ׳אטרים ותאריכים
-          </p>
+        <div className="flex items-center gap-3">
+          {selectedChatterId && (
+            <button
+              onClick={() => {
+                setSelectedChatterId(null);
+                clearFilter();
+              }}
+              className="flex items-center gap-1.5 text-sm text-gray-300 hover:text-white bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded-lg transition-colors border border-gray-700"
+            >
+              <ChevronRight className="w-4 h-4" />
+              חזרה
+            </button>
+          )}
+          <div>
+            <h1 className="text-2xl font-bold text-white">
+              {selectedChatterData
+                ? selectedChatterData.chatter.name
+                : "סיכומי יום"}
+            </h1>
+            <p className="text-gray-400 text-sm mt-1">
+              {selectedChatterData
+                ? `${chatterSummaries.length} סיכומים · ${selectedChatterData.debts.length} חובות`
+                : "סיכומי הכנסות לפי צ׳אטרים ותאריכים"}
+            </p>
+          </div>
         </div>
         <div className="flex gap-2">
           <button
-            onClick={openCreate}
+            onClick={() => openCreate(selectedChatterId || "")}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition-colors flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
             סיכום חדש
           </button>
-          <button
-            onClick={exportCSV}
-            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition-colors flex items-center gap-2"
-          >
-            <Download className="w-4 h-4" />
-            ייצוא CSV
-          </button>
+          {!selectedChatterId && (
+            <button
+              onClick={exportCSV}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition-colors flex items-center gap-2"
+            >
+              <Download className="w-4 h-4" />
+              ייצוא CSV
+            </button>
+          )}
           <button
             onClick={handleRefresh}
             disabled={refreshing}
@@ -343,270 +388,406 @@ export default function DailySummaries() {
         </div>
       </div>
 
-
       {error && (
         <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-2 rounded-lg text-sm">
           {error}
         </div>
       )}
 
-      {/* Debts Section */}
-      <div className="bg-gray-900 rounded-xl p-6">
-        <div className="flex items-center gap-3 mb-2">
-          <h2 className="text-lg font-bold text-white">חובות סיכום יום</h2>
-          <span className="bg-red-600 text-white text-xs px-2 py-0.5 rounded-full">
-            {debts.length}
-          </span>
-        </div>
-        <p className="text-sm text-gray-400 mb-4">
-          משמרות שחייבים סיכום ועדיין לא הוגש:
-        </p>
-        {debts.length === 0 ? (
-          <div className="text-center py-6">
-            <FileText className="w-10 h-10 text-green-500 mx-auto mb-2" />
-            <p className="text-gray-400">אין חובות סיכום</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {debts.slice(0, 12).map((debt, i) => (
-              <div
-                key={debt._id || i}
-                className="bg-gray-800 border border-gray-700 rounded-lg p-4 min-w-0"
-              >
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <p className="font-bold text-white truncate">
-                    {debt.chatterId?.name || "לא ידוע"}
-                  </p>
-                  <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
-                </div>
-                <p className="text-sm text-gray-400">{formatDate(debt.date)}</p>
-                <p className="text-sm text-gray-500">
-                  {formatTime(debt.startTime)} - {formatTime(debt.endTime)}
-                </p>
+      {/* ===== MAIN VIEW: Chatter Grid ===== */}
+      {!selectedChatterId && (
+        <>
+          {/* Debts Section */}
+          {debts.length > 0 && (
+            <div className="bg-gray-900 rounded-xl p-6">
+              <div className="flex items-center gap-3 mb-2">
+                <h2 className="text-lg font-bold text-white">חובות סיכום יום</h2>
+                <span className="bg-red-600 text-white text-xs px-2 py-0.5 rounded-full">
+                  {debts.length}
+                </span>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Summaries Table */}
-      {(
-        <div className="bg-gray-900 rounded-xl overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-800 flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-lg font-bold text-white">
-              סיכומים ({summaries.filter(s => !filterChatter || (s.chatterId?._id || s.chatterId) === filterChatter).length})
-            </h2>
-            <div className="flex flex-wrap items-center gap-2">
-              <select
-                value={filterChatter}
-                onChange={(e) => setFilterChatter(e.target.value)}
-                className="bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500"
-              >
-                <option value="">כל הצ׳אטרים</option>
-                {chatters.map((c) => (
-                  <option key={c._id} value={c._id}>{c.name}</option>
+              <p className="text-sm text-gray-400 mb-4">
+                משמרות שחייבים סיכום ועדיין לא הוגש:
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {debts.slice(0, 12).map((debt, i) => (
+                  <div
+                    key={debt._id || i}
+                    className="bg-gray-800 border border-gray-700 rounded-lg p-4 min-w-0"
+                  >
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <p className="font-bold text-white truncate">
+                        {debt.chatterId?.name || "לא ידוע"}
+                      </p>
+                      <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+                    </div>
+                    <p className="text-sm text-gray-400">{formatDate(debt.date)}</p>
+                    <p className="text-sm text-gray-500">
+                      {formatTime(debt.startTime)} - {formatTime(debt.endTime)}
+                    </p>
+                  </div>
                 ))}
-              </select>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500"
-              />
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500"
-              />
-              <button
-                onClick={handleFilter}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-sm transition-colors flex items-center gap-1"
-              >
-                <Filter className="w-3.5 h-3.5" />
-                סנן
-              </button>
-              {(filterActive || filterChatter) && (
-                <button
-                  onClick={() => { clearFilter(); setFilterChatter(""); }}
-                  className="text-gray-400 hover:text-white flex items-center gap-1 text-sm"
+              </div>
+            </div>
+          )}
+
+          {/* Chatter Grid */}
+          <div>
+            <h2 className="text-lg font-bold text-white mb-4">צ׳אטרים</h2>
+            {chatterStats.length === 0 ? (
+              <div className="text-center py-16 text-gray-500">אין צ׳אטרים</div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {chatterStats.map(({ chatter, summaries: cs, debts: cd, totalUSD, lastSummary }) => (
+                  <button
+                    key={chatter._id}
+                    onClick={() => setSelectedChatterId(chatter._id)}
+                    className="bg-gray-900 border border-gray-800 hover:border-blue-500/50 hover:bg-gray-800/60 rounded-xl p-5 text-right transition-all group"
+                  >
+                    {/* Avatar + name */}
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 rounded-full bg-blue-600/20 border border-blue-500/30 flex items-center justify-center shrink-0">
+                        <User className="w-5 h-5 text-blue-400" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-bold text-white truncate group-hover:text-blue-300 transition-colors">
+                          {chatter.name}
+                        </p>
+                        {lastSummary && (
+                          <p className="text-xs text-gray-500 truncate">
+                            עדכון אחרון: {formatDate(lastSummary.date)}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Stats */}
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      <div className="bg-gray-800 rounded-lg py-2 px-1">
+                        <p className="text-lg font-bold text-white">{cs.length}</p>
+                        <p className="text-xs text-gray-500">סיכומים</p>
+                      </div>
+                      <div className={`rounded-lg py-2 px-1 ${cd.length > 0 ? "bg-red-900/30 border border-red-800/40" : "bg-gray-800"}`}>
+                        <p className={`text-lg font-bold ${cd.length > 0 ? "text-red-400" : "text-white"}`}>
+                          {cd.length}
+                        </p>
+                        <p className="text-xs text-gray-500">חובות</p>
+                      </div>
+                      <div className="bg-gray-800 rounded-lg py-2 px-1">
+                        <p className="text-sm font-bold text-green-400">
+                          ${Math.round(totalUSD)}
+                        </p>
+                        <p className="text-xs text-gray-500">סה"כ</p>
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Summaries Table */}
+          <div className="bg-gray-900 rounded-xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-800 flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-lg font-bold text-white">
+                סיכומים ({summaries.length})
+              </h2>
+              <div className="flex flex-wrap items-center gap-2">
+                <select
+                  value={filterChatter}
+                  onChange={(e) => setFilterChatter(e.target.value)}
+                  className="bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500"
                 >
-                  <X className="w-3.5 h-3.5" />
-                  נקה
+                  <option value="">כל הצ׳אטרים</option>
+                  {chatters.map((c) => (
+                    <option key={c._id} value={c._id}>{c.name}</option>
+                  ))}
+                </select>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500"
+                />
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500"
+                />
+                <button
+                  onClick={handleFilter}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-sm transition-colors flex items-center gap-1"
+                >
+                  <Filter className="w-3.5 h-3.5" />
+                  סנן
                 </button>
-              )}
+                {(filterActive || filterChatter) && (
+                  <button
+                    onClick={() => { clearFilter(); setFilterChatter(""); }}
+                    className="text-gray-400 hover:text-white flex items-center gap-1 text-sm"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    נקה
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-right text-sm">
+                <thead>
+                  <tr className="bg-gray-800/50 text-gray-400">
+                    <th className="py-3 px-4 font-medium whitespace-nowrap">תאריך</th>
+                    <th className="py-3 px-4 font-medium whitespace-nowrap">צ׳אטר</th>
+                    <th className="py-3 px-4 font-medium whitespace-nowrap">משמרת</th>
+                    <th className="py-3 px-4 font-medium whitespace-nowrap">טלגרם <span className="text-xs text-gray-600">(€→$)</span></th>
+                    <th className="py-3 px-4 font-medium whitespace-nowrap">אונלי <span className="text-xs text-gray-600">($)</span></th>
+                    <th className="py-3 px-4 font-medium whitespace-nowrap">העברות <span className="text-xs text-gray-600">(₪→$)</span></th>
+                    <th className="py-3 px-4 font-medium whitespace-nowrap">אחר <span className="text-xs text-gray-600">(₪→$)</span></th>
+                    <th className="py-3 px-4 font-medium whitespace-nowrap">סה"כ $</th>
+                    <th className="py-3 px-4 font-medium whitespace-nowrap">פעולות</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-800">
+                  {summaries.filter(s => !filterChatter || (s.chatterId?._id || s.chatterId) === filterChatter).length === 0 && (
+                    <tr>
+                      <td colSpan={9} className="py-10 text-center text-gray-500 text-sm">אין סיכומים להצגה</td>
+                    </tr>
+                  )}
+                  {summaries.filter(s => !filterChatter || (s.chatterId?._id || s.chatterId) === filterChatter).map((s) => {
+                    const hasUSD = s.incomeTotalUSD != null && s.incomeTotalUSD > 0;
+                    return (
+                      <tr key={s._id} className="hover:bg-gray-800/30 transition-colors">
+                        <td className="py-2.5 px-4 text-gray-300 whitespace-nowrap">{formatDate(s.date)}</td>
+                        <td className="py-2.5 px-4 text-white font-medium whitespace-nowrap">{s.chatterId?.name || "לא ידוע"}</td>
+                        <td className="py-2.5 px-4 text-gray-400 whitespace-nowrap">{s.shiftType || "—"}</td>
+                        <td className="py-2.5 px-4 whitespace-nowrap">
+                          <span className="text-gray-300">${(s.incomeTelegramUSD || 0).toFixed(2)}</span>
+                          <span className="text-gray-600 text-xs mr-1">(€{s.incomeTelegram || 0})</span>
+                        </td>
+                        <td className="py-2.5 px-4 whitespace-nowrap">
+                          <span className="text-gray-300">${(s.incomeOnlyfansUSD ?? s.incomeOnlyfans ?? 0).toFixed(2)}</span>
+                        </td>
+                        <td className="py-2.5 px-4 whitespace-nowrap">
+                          <span className="text-gray-300">${(s.incomeTransfersUSD || 0).toFixed(2)}</span>
+                          <span className="text-gray-600 text-xs mr-1">(₪{Math.round((s.incomeTransfers || 0) / 1.18)})</span>
+                        </td>
+                        <td className="py-2.5 px-4 whitespace-nowrap">
+                          <span className="text-gray-300">${(s.incomeOtherUSD || 0).toFixed(2)}</span>
+                          <span className="text-gray-600 text-xs mr-1">(₪{Math.round((s.incomeOther || 0) / 1.18)})</span>
+                        </td>
+                        <td className="py-2.5 px-4 whitespace-nowrap">
+                          <span className="text-green-400 font-bold">
+                            ${(hasUSD ? s.incomeTotalUSD : s.incomeTotal || 0).toFixed(2)}
+                          </span>
+                          {!hasUSD && <span className="text-gray-600 text-xs mr-1">(ללא המרה)</span>}
+                        </td>
+                        <td className="py-2.5 px-4 whitespace-nowrap">
+                          <button
+                            onClick={() => setViewingSummary(s)}
+                            className="text-gray-400 hover:text-blue-400 transition-colors text-xs flex items-center gap-1 whitespace-nowrap"
+                          >
+                            <FileText className="w-3.5 h-3.5" />
+                            דו"ח מלא
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+                <tfoot>
+                  <tr className="bg-gray-800/50 font-bold text-white">
+                    <td className="py-3 px-4" colSpan={3}>סה"כ</td>
+                    <td className="py-3 px-4">
+                      ${summaries.filter(s => !filterChatter || (s.chatterId?._id || s.chatterId) === filterChatter).reduce((s, r) => s + (r.incomeTelegramUSD || 0), 0).toFixed(2)}
+                    </td>
+                    <td className="py-3 px-4">
+                      ${summaries.filter(s => !filterChatter || (s.chatterId?._id || s.chatterId) === filterChatter).reduce((s, r) => s + (r.incomeOnlyfansUSD ?? r.incomeOnlyfans ?? 0), 0).toFixed(2)}
+                    </td>
+                    <td className="py-3 px-4">
+                      ${summaries.filter(s => !filterChatter || (s.chatterId?._id || s.chatterId) === filterChatter).reduce((s, r) => s + (r.incomeTransfersUSD || 0), 0).toFixed(2)}
+                    </td>
+                    <td className="py-3 px-4">
+                      ${summaries.filter(s => !filterChatter || (s.chatterId?._id || s.chatterId) === filterChatter).reduce((s, r) => s + (r.incomeOtherUSD || 0), 0).toFixed(2)}
+                    </td>
+                    <td className="py-3 px-4 text-green-400">
+                      ${summaries.filter(s => !filterChatter || (s.chatterId?._id || s.chatterId) === filterChatter).reduce((s, r) => s + (r.incomeTotalUSD || r.incomeTotal || 0), 0).toFixed(2)}
+                    </td>
+                    <td></td>
+                  </tr>
+                </tfoot>
+              </table>
             </div>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-right text-sm">
-              <thead>
-                <tr className="bg-gray-800/50 text-gray-400">
-                  <th className="py-3 px-4 font-medium whitespace-nowrap">
-                    תאריך
-                  </th>
-                  <th className="py-3 px-4 font-medium whitespace-nowrap">
-                    צ׳אטר
-                  </th>
-                  <th className="py-3 px-4 font-medium whitespace-nowrap">
-                    משמרת
-                  </th>
-                  <th className="py-3 px-4 font-medium whitespace-nowrap">
-                    טלגרם <span className="text-xs text-gray-600">(€→$)</span>
-                  </th>
-                  <th className="py-3 px-4 font-medium whitespace-nowrap">
-                    אונלי <span className="text-xs text-gray-600">($)</span>
-                  </th>
-                  <th className="py-3 px-4 font-medium whitespace-nowrap">
-                    העברות <span className="text-xs text-gray-600">(₪→$)</span>
-                  </th>
-                  <th className="py-3 px-4 font-medium whitespace-nowrap">
-                    אחר <span className="text-xs text-gray-600">(₪→$)</span>
-                  </th>
-                  <th className="py-3 px-4 font-medium whitespace-nowrap">
-                    סה"כ $
-                  </th>
-                  <th className="py-3 px-4 font-medium whitespace-nowrap">
-                    פעולות
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-800">
-                {summaries.filter(s => !filterChatter || (s.chatterId?._id || s.chatterId) === filterChatter).length === 0 && (
-                  <tr>
-                    <td colSpan={9} className="py-10 text-center text-gray-500 text-sm">אין סיכומים להצגה</td>
-                  </tr>
-                )}
-                {summaries.filter(s => !filterChatter || (s.chatterId?._id || s.chatterId) === filterChatter).map((s) => {
-                  const hasUSD =
-                    s.incomeTotalUSD != null && s.incomeTotalUSD > 0;
+        </>
+      )}
+
+      {/* ===== CHATTER DETAIL VIEW ===== */}
+      {selectedChatterId && selectedChatterData && (
+        <>
+          {/* Chatter debts */}
+          {selectedChatterData.debts.length > 0 && (
+            <div className="bg-gray-900 rounded-xl p-5">
+              <div className="flex items-center gap-3 mb-3">
+                <h2 className="text-base font-bold text-white">חובות</h2>
+                <span className="bg-red-600 text-white text-xs px-2 py-0.5 rounded-full">
+                  {selectedChatterData.debts.length}
+                </span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {selectedChatterData.debts.map((debt, i) => (
+                  <div
+                    key={debt._id || i}
+                    className="bg-gray-800 border border-red-900/40 rounded-lg p-3"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm text-gray-300">{formatDate(debt.date)}</p>
+                      <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {formatTime(debt.startTime)} - {formatTime(debt.endTime)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Filters */}
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500"
+            />
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500"
+            />
+            <button
+              onClick={handleFilter}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-sm transition-colors flex items-center gap-1"
+            >
+              <Filter className="w-3.5 h-3.5" />
+              סנן
+            </button>
+            {filterActive && (
+              <button
+                onClick={clearFilter}
+                className="text-gray-400 hover:text-white flex items-center gap-1 text-sm"
+              >
+                <X className="w-3.5 h-3.5" />
+                נקה
+              </button>
+            )}
+          </div>
+
+          {/* Shifts list */}
+          <div className="bg-gray-900 rounded-xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-800">
+              <h2 className="text-base font-bold text-white">
+                משמרות ({chatterSummaries.length})
+              </h2>
+            </div>
+            {chatterSummaries.length === 0 ? (
+              <div className="text-center py-16 text-gray-500 text-sm">
+                אין סיכומים להצגה
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-800">
+                {chatterSummaries.map((s) => {
+                  const hasUSD = s.incomeTotalUSD != null && s.incomeTotalUSD > 0;
+                  const total = hasUSD ? s.incomeTotalUSD : s.incomeTotal || 0;
                   return (
-                    <tr
+                    <div
                       key={s._id}
-                      className="hover:bg-gray-800/30 transition-colors"
+                      onClick={() => setViewingSummary(s)}
+                      className="flex items-center justify-between gap-4 px-5 py-4 hover:bg-gray-800/30 transition-colors cursor-pointer"
                     >
-                      <td className="py-2.5 px-4 text-gray-300 whitespace-nowrap">
-                        {formatDate(s.date)}
-                      </td>
-                      <td className="py-2.5 px-4 text-white font-medium whitespace-nowrap">
-                        {s.chatterId?.name || "לא ידוע"}
-                      </td>
-                      <td className="py-2.5 px-4 text-gray-400 whitespace-nowrap">
-                        {s.shiftType || "—"}
-                      </td>
-                      <td className="py-2.5 px-4 whitespace-nowrap">
-                        <span className="text-gray-300">
-                          ${(s.incomeTelegramUSD || 0).toFixed(2)}
+                      <div className="flex items-center gap-4 min-w-0">
+                        {/* Date + shift type */}
+                        <div className="shrink-0">
+                          <p className="text-white font-medium text-sm">
+                            {formatDate(s.date)}
+                          </p>
+                          <p className="text-xs text-gray-500">{s.shiftType || "—"}</p>
+                        </div>
+
+                        {/* Income breakdown */}
+                        <div className="hidden sm:flex items-center flex-wrap gap-1.5">
+                          {s.incomeTelegram > 0 && (
+                            <span className="bg-blue-500/15 text-blue-300 border border-blue-500/25 rounded-md px-2 py-0.5 text-xs font-medium whitespace-nowrap">
+                              טלג׳ €{s.incomeTelegram}
+                            </span>
+                          )}
+                          {s.incomeOnlyfans > 0 && (
+                            <span className="bg-cyan-500/15 text-cyan-300 border border-cyan-500/25 rounded-md px-2 py-0.5 text-xs font-medium whitespace-nowrap">
+                              OF ${s.incomeOnlyfans}
+                            </span>
+                          )}
+                          {s.incomeTransfers > 0 && (
+                            <span className="bg-purple-500/15 text-purple-300 border border-purple-500/25 rounded-md px-2 py-0.5 text-xs font-medium whitespace-nowrap">
+                              העב׳ ₪{Math.round(s.incomeTransfers / 1.18)}
+                            </span>
+                          )}
+                          {s.incomeOther > 0 && (
+                            <span className="bg-gray-500/20 text-gray-300 border border-gray-500/30 rounded-md px-2 py-0.5 text-xs font-medium whitespace-nowrap">
+                              אחר ₪{Math.round(s.incomeOther / 1.18)}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Flags */}
+                        <div className="flex items-center gap-1.5">
+                          {s.hasDebts && (
+                            <span className="w-2 h-2 rounded-full bg-red-500" title="חובות" />
+                          )}
+                          {s.hasPendingSales && (
+                            <span className="w-2 h-2 rounded-full bg-yellow-500" title="מכירות תלויות" />
+                          )}
+                          {s.hasUnusualEvents && (
+                            <span className="w-2 h-2 rounded-full bg-orange-500" title="אירועים חריגים" />
+                          )}
+                          {s.allDepositsVerified && (
+                            <span className="w-2 h-2 rounded-full bg-green-500" title="הפקדות אומתו" />
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 shrink-0">
+                        <span className="text-green-400 font-bold text-sm">
+                          ${total.toFixed(2)}
                         </span>
-                        <span className="text-gray-600 text-xs mr-1">
-                          (€{s.incomeTelegram || 0})
-                        </span>
-                      </td>
-                      <td className="py-2.5 px-4 whitespace-nowrap">
-                        <span className="text-gray-300">
-                          $
-                          {(
-                            s.incomeOnlyfansUSD ??
-                            s.incomeOnlyfans ??
-                            0
-                          ).toFixed(2)}
-                        </span>
-                      </td>
-                      <td className="py-2.5 px-4 whitespace-nowrap">
-                        <span className="text-gray-300">
-                          ${(s.incomeTransfersUSD || 0).toFixed(2)}
-                        </span>
-                        <span className="text-gray-600 text-xs mr-1">
-                          (₪{Math.round((s.incomeTransfers || 0) / 1.18)})
-                        </span>
-                      </td>
-                      <td className="py-2.5 px-4 whitespace-nowrap">
-                        <span className="text-gray-300">
-                          ${(s.incomeOtherUSD || 0).toFixed(2)}
-                        </span>
-                        <span className="text-gray-600 text-xs mr-1">
-                          (₪{Math.round((s.incomeOther || 0) / 1.18)})
-                        </span>
-                      </td>
-                      <td className="py-2.5 px-4 whitespace-nowrap">
-                        <span className="text-green-400 font-bold">
-                          $
-                          {(hasUSD
-                            ? s.incomeTotalUSD
-                            : s.incomeTotal || 0
-                          ).toFixed(2)}
-                        </span>
-                        {!hasUSD && (
-                          <span className="text-gray-600 text-xs mr-1">
-                            (ללא המרה)
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-2.5 px-4 whitespace-nowrap">
                         <button
                           onClick={() => setViewingSummary(s)}
-                          className="text-gray-400 hover:text-blue-400 transition-colors text-xs flex items-center gap-1 whitespace-nowrap"
+                          className="text-gray-400 hover:text-blue-400 transition-colors text-xs flex items-center gap-1"
                         >
                           <FileText className="w-3.5 h-3.5" />
-                          דו"ח מלא
+                          <span className="hidden sm:inline">דו"ח</span>
                         </button>
-                      </td>
-                    </tr>
+                      </div>
+                    </div>
                   );
                 })}
-              </tbody>
-              <tfoot>
-                <tr className="bg-gray-800/50 font-bold text-white">
-                  <td className="py-3 px-4" colSpan={3}>
-                    סה"כ
-                  </td>
-                  <td className="py-3 px-4">
-                    $
-                    {summaries
-                      .filter(s => !filterChatter || (s.chatterId?._id || s.chatterId) === filterChatter)
-                      .reduce((s, r) => s + (r.incomeTelegramUSD || 0), 0)
-                      .toFixed(2)}
-                  </td>
-                  <td className="py-3 px-4">
-                    $
-                    {summaries
-                      .filter(s => !filterChatter || (s.chatterId?._id || s.chatterId) === filterChatter)
-                      .reduce(
-                        (s, r) =>
-                          s + (r.incomeOnlyfansUSD ?? r.incomeOnlyfans ?? 0),
-                        0,
-                      )
-                      .toFixed(2)}
-                  </td>
-                  <td className="py-3 px-4">
-                    $
-                    {summaries
-                      .filter(s => !filterChatter || (s.chatterId?._id || s.chatterId) === filterChatter)
-                      .reduce((s, r) => s + (r.incomeTransfersUSD || 0), 0)
-                      .toFixed(2)}
-                  </td>
-                  <td className="py-3 px-4">
-                    $
-                    {summaries
-                      .filter(s => !filterChatter || (s.chatterId?._id || s.chatterId) === filterChatter)
-                      .reduce((s, r) => s + (r.incomeOtherUSD || 0), 0)
-                      .toFixed(2)}
-                  </td>
-                  <td className="py-3 px-4 text-green-400">
-                    $
-                    {summaries
-                      .filter(s => !filterChatter || (s.chatterId?._id || s.chatterId) === filterChatter)
-                      .reduce(
-                        (s, r) => s + (r.incomeTotalUSD || r.incomeTotal || 0),
-                        0,
-                      )
-                      .toFixed(2)}
-                  </td>
-                  <td></td>
-                </tr>
-              </tfoot>
-            </table>
+              </div>
+            )}
+
+            {/* Chatter total footer */}
+            {chatterSummaries.length > 0 && (
+              <div className="px-5 py-3 bg-gray-800/50 border-t border-gray-800 flex justify-between items-center">
+                <span className="text-sm text-gray-400">סה"כ</span>
+                <span className="text-green-400 font-bold">
+                  ${chatterSummaries
+                    .reduce((sum, s) => sum + (s.incomeTotalUSD || s.incomeTotal || 0), 0)
+                    .toFixed(2)}
+                </span>
+              </div>
+            )}
           </div>
-        </div>
+        </>
       )}
 
       {/* Stats Bar */}
@@ -615,56 +796,56 @@ export default function DailySummaries() {
           className="max-w-7xl mx-auto flex flex-wrap items-center justify-center gap-x-6 gap-y-1 text-sm"
           dir="rtl"
         >
-          <div className="text-gray-400 whitespace-nowrap">
-            סיכומים{" "}
-            <span className="text-white font-bold">{summaries.length}</span>
-          </div>
-          <div className="text-gray-400 whitespace-nowrap">
-            צ׳אטרים{" "}
-            <span className="text-white font-bold">{uniqueChatters}</span>
-          </div>
-          <div className="text-gray-400 whitespace-nowrap">
-            טלגרם{" "}
-            <span className="text-white font-bold">
-              $
-              {summaries
-                .reduce((s, r) => s + (r.incomeTelegramUSD || 0), 0)
-                .toFixed(2)}
-            </span>
-          </div>
-          <div className="text-gray-400 whitespace-nowrap">
-            אונלי{" "}
-            <span className="text-white font-bold">
-              $
-              {summaries
-                .reduce(
-                  (s, r) => s + (r.incomeOnlyfansUSD ?? r.incomeOnlyfans ?? 0),
-                  0,
-                )
-                .toFixed(2)}
-            </span>
-          </div>
-          <div className="text-gray-400 whitespace-nowrap">
-            העברות{" "}
-            <span className="text-white font-bold">
-              $
-              {summaries
-                .reduce((s, r) => s + (r.incomeTransfersUSD || 0), 0)
-                .toFixed(2)}
-            </span>
-          </div>
-          <div className="text-gray-400 whitespace-nowrap">
-            סה"כ{" "}
-            <span className="text-green-400 font-bold">
-              $
-              {summaries
-                .reduce(
-                  (s, r) => s + (r.incomeTotalUSD || r.incomeTotal || 0),
-                  0,
-                )
-                .toFixed(2)}
-            </span>
-          </div>
+          {selectedChatterData ? (
+            <>
+              <div className="text-gray-400 whitespace-nowrap">
+                {selectedChatterData.chatter.name}
+              </div>
+              <div className="text-gray-400 whitespace-nowrap">
+                משמרות{" "}
+                <span className="text-white font-bold">{chatterSummaries.length}</span>
+              </div>
+              <div className="text-gray-400 whitespace-nowrap">
+                סה"כ{" "}
+                <span className="text-green-400 font-bold">
+                  ${chatterSummaries
+                    .reduce((s, r) => s + (r.incomeTotalUSD || r.incomeTotal || 0), 0)
+                    .toFixed(2)}
+                </span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="text-gray-400 whitespace-nowrap">
+                סיכומים{" "}
+                <span className="text-white font-bold">{summaries.length}</span>
+              </div>
+              <div className="text-gray-400 whitespace-nowrap">
+                צ׳אטרים{" "}
+                <span className="text-white font-bold">
+                  {new Set(summaries.map((s) => s.chatterId?._id || s.chatterId)).size}
+                </span>
+              </div>
+              <div className="text-gray-400 whitespace-nowrap">
+                חובות{" "}
+                <span className={`font-bold ${debts.length > 0 ? "text-red-400" : "text-white"}`}>
+                  {debts.length}
+                </span>
+              </div>
+              <div className="text-gray-400 whitespace-nowrap">
+                סה"כ{" "}
+                <span className="text-green-400 font-bold">
+                  $
+                  {summaries
+                    .reduce(
+                      (s, r) => s + (r.incomeTotalUSD || r.incomeTotal || 0),
+                      0,
+                    )
+                    .toFixed(2)}
+                </span>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -741,7 +922,8 @@ export default function DailySummaries() {
                       ${(viewingSummary.incomeTransfersUSD || 0).toFixed(2)}
                     </p>
                     <p className="text-xs text-gray-600">
-                      ₪{Math.round((viewingSummary.incomeTransfers || 0) / 1.18)} <span className="text-gray-700">(₪{viewingSummary.incomeTransfers || 0})</span>
+                      ₪{Math.round((viewingSummary.incomeTransfers || 0) / 1.18)}{" "}
+                      <span className="text-gray-700">(₪{viewingSummary.incomeTransfers || 0})</span>
                     </p>
                   </div>
                   <div className="bg-gray-800 rounded-lg p-3">
@@ -750,7 +932,8 @@ export default function DailySummaries() {
                       ${(viewingSummary.incomeOtherUSD || 0).toFixed(2)}
                     </p>
                     <p className="text-xs text-gray-600">
-                      ₪{Math.round((viewingSummary.incomeOther || 0) / 1.18)} <span className="text-gray-700">(₪{viewingSummary.incomeOther || 0})</span>
+                      ₪{Math.round((viewingSummary.incomeOther || 0) / 1.18)}{" "}
+                      <span className="text-gray-700">(₪{viewingSummary.incomeOther || 0})</span>
                     </p>
                   </div>
                 </div>
@@ -813,12 +996,11 @@ export default function DailySummaries() {
                     )}
                     <div>
                       <p className="text-sm text-white">חובות</p>
-                      {viewingSummary.hasDebts &&
-                        viewingSummary.debtsDetail && (
-                          <p className="text-xs text-gray-400 mt-0.5">
-                            {viewingSummary.debtsDetail}
-                          </p>
-                        )}
+                      {viewingSummary.hasDebts && viewingSummary.debtsDetail && (
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          {viewingSummary.debtsDetail}
+                        </p>
+                      )}
                     </div>
                   </div>
                   <div
@@ -831,12 +1013,11 @@ export default function DailySummaries() {
                     )}
                     <div>
                       <p className="text-sm text-white">מכירות תלויות</p>
-                      {viewingSummary.hasPendingSales &&
-                        viewingSummary.pendingSalesDetail && (
-                          <p className="text-xs text-gray-400 mt-0.5">
-                            {viewingSummary.pendingSalesDetail}
-                          </p>
-                        )}
+                      {viewingSummary.hasPendingSales && viewingSummary.pendingSalesDetail && (
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          {viewingSummary.pendingSalesDetail}
+                        </p>
+                      )}
                     </div>
                   </div>
                   <div
@@ -849,12 +1030,11 @@ export default function DailySummaries() {
                     )}
                     <div>
                       <p className="text-sm text-white">אירועים חריגים</p>
-                      {viewingSummary.hasUnusualEvents &&
-                        viewingSummary.unusualEventsDetail && (
-                          <p className="text-xs text-gray-400 mt-0.5">
-                            {viewingSummary.unusualEventsDetail}
-                          </p>
-                        )}
+                      {viewingSummary.hasUnusualEvents && viewingSummary.unusualEventsDetail && (
+                        <p className="text-xs text-gray-400 mt-0.5">
+                          {viewingSummary.unusualEventsDetail}
+                        </p>
+                      )}
                     </div>
                   </div>
                   <div
@@ -882,9 +1062,7 @@ export default function DailySummaries() {
                   <div className="space-y-2">
                     {viewingSummary.improvementSuggestions && (
                       <div className="bg-gray-800 rounded-lg px-4 py-3">
-                        <p className="text-xs text-gray-500 mb-1">
-                          הצעות לשיפור
-                        </p>
+                        <p className="text-xs text-gray-500 mb-1">הצעות לשיפור</p>
                         <p className="text-sm text-gray-300">
                           {viewingSummary.improvementSuggestions}
                         </p>
@@ -900,9 +1078,7 @@ export default function DailySummaries() {
                     )}
                     {viewingSummary.selfImprovementPoint && (
                       <div className="bg-gray-800 rounded-lg px-4 py-3">
-                        <p className="text-xs text-gray-500 mb-1">
-                          נקודת שיפור עצמי
-                        </p>
+                        <p className="text-xs text-gray-500 mb-1">נקודת שיפור עצמי</p>
                         <p className="text-sm text-gray-300">
                           {viewingSummary.selfImprovementPoint}
                         </p>
@@ -910,9 +1086,7 @@ export default function DailySummaries() {
                     )}
                     {viewingSummary.selfPreservationPoint && (
                       <div className="bg-gray-800 rounded-lg px-4 py-3">
-                        <p className="text-xs text-gray-500 mb-1">
-                          נקודת שימור עצמי
-                        </p>
+                        <p className="text-xs text-gray-500 mb-1">נקודת שימור עצמי</p>
                         <p className="text-sm text-gray-300">
                           {viewingSummary.selfPreservationPoint}
                         </p>
