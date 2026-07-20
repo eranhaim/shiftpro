@@ -67,7 +67,7 @@ router.get('/progress', async (req, res) => {
       MonthlyGoal.find({ month }).populate('chatterId', 'name'),
       DailySummary.aggregate([
         { $match: { date: { $gte: monthStart, $lt: monthEnd } } },
-        { $group: { _id: '$chatterId', earned: { $sum: '$incomeTotal' } } },
+        { $group: { _id: '$chatterId', earned: { $sum: '$incomeTotalUSD' } } },
       ]),
     ]);
 

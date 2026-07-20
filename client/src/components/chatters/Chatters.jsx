@@ -176,7 +176,7 @@ function EditChatterModal({ chatter, onClose, onSaved, onDelete }) {
           <div>
             <label className="flex items-center gap-1.5 text-sm font-medium text-gray-300 mb-1.5">
               <Target className="w-4 h-4 text-yellow-400" />
-              יעד חודשי (₪) — {new Date().toLocaleString('he-IL', { month: 'long', year: 'numeric' })}
+              יעד חודשי ($) — {new Date().toLocaleString('he-IL', { month: 'long', year: 'numeric' })}
             </label>
             {loadingGoal ? (
               <div className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 flex items-center gap-2">
@@ -477,11 +477,11 @@ export default function Chatters() {
                         return (
                           <span className="text-sm font-medium">
                             <span className={pct != null && pct >= 100 ? 'text-green-400' : 'text-white'}>
-                              ₪{earned.toLocaleString()}
+                              ${earned.toLocaleString()}
                             </span>
                             {goal != null && (
                               <span className="text-gray-500">
-                                {' / '}₪{goal.toLocaleString()}
+                                {' / '}${goal.toLocaleString()}
                               </span>
                             )}
                           </span>

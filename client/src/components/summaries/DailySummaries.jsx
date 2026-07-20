@@ -12,7 +12,6 @@ import {
   XCircle,
   AlertCircle,
   ChevronRight,
-  User,
 } from "lucide-react";
 import {
   getDailySummaries,
@@ -20,6 +19,7 @@ import {
   createDailySummary,
   updateDailySummary,
   getChatters,
+  getMonthlyGoals,
 } from "../../services/api.js";
 
 function Spinner() {
@@ -73,6 +73,7 @@ export default function DailySummaries() {
   const [summaries, setSummaries] = useState([]);
   const [debts, setDebts] = useState([]);
   const [chatters, setChatters] = useState([]);
+  const [monthlyGoals, setMonthlyGoals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -102,14 +103,18 @@ export default function DailySummaries() {
       if (filterActive && startDate) params.startDate = startDate;
       if (filterActive && endDate) params.endDate = endDate;
 
-      const [summariesData, debtsData, chattersData] = await Promise.all([
+      const now = new Date();
+      const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+      const [summariesData, debtsData, chattersData, goalsData] = await Promise.all([
         getDailySummaries(params),
         getSummaryDebts(),
         getChatters(),
+        getMonthlyGoals(currentMonth),
       ]);
       setSummaries(Array.isArray(summariesData) ? summariesData : []);
       setDebts(Array.isArray(debtsData) ? debtsData : []);
       setChatters(Array.isArray(chattersData) ? chattersData : []);
+      setMonthlyGoals(Array.isArray(goalsData) ? goalsData : []);
     } catch (err) {
       setError(err.message);
     }
@@ -287,6 +292,8 @@ export default function DailySummaries() {
   };
 
   // Build per-chatter stats for the grid view
+  const now2 = new Date();
+  const currentMonth = `${now2.getFullYear()}-${String(now2.getMonth() + 1).padStart(2, '0')}-01`;
   const chatterStats = chatters.map((chatter) => {
     const chatterSummaries = summaries.filter(
       (s) => (s.chatterId?._id || s.chatterId) === chatter._id,
@@ -298,7 +305,20 @@ export default function DailySummaries() {
       (sum, s) => sum + (s.incomeTotalUSD || s.incomeTotal || 0),
       0,
     );
-    const lastSummary = chatterSummaries.sort(
+    // Current month income only
+    const monthlySummaries = chatterSummaries.filter(
+      (s) => s.date && s.date.slice(0, 7) === currentMonth.slice(0, 7)
+    );
+    const monthlyUSD = monthlySummaries.reduce((sum, s) => sum + (s.incomeTotalUSD || s.incomeTotal || 0), 0);
+    const monthlyTelegram = monthlySummaries.reduce((sum, s) => sum + (s.incomeTelegramUSD || 0), 0);
+    const monthlyOnlyfans = monthlySummaries.reduce((sum, s) => sum + (s.incomeOnlyfansUSD ?? s.incomeOnlyfans ?? 0), 0);
+    const monthlyTransfers = monthlySummaries.reduce((sum, s) => sum + (s.incomeTransfersUSD || 0), 0);
+    const monthlyOther = monthlySummaries.reduce((sum, s) => sum + (s.incomeOtherUSD || 0), 0);
+    const goalEntry = monthlyGoals.find(
+      (g) => (g.chatterId?._id || g.chatterId) === chatter._id,
+    );
+    const goalAmount = goalEntry?.goalAmount || 0;
+    const lastSummary = [...chatterSummaries].sort(
       (a, b) => new Date(b.date) - new Date(a.date),
     )[0];
     return {
@@ -306,6 +326,12 @@ export default function DailySummaries() {
       summaries: chatterSummaries,
       debts: chatterDebts,
       totalUSD,
+      monthlyUSD,
+      monthlyTelegram,
+      monthlyOnlyfans,
+      monthlyTransfers,
+      monthlyOther,
+      goalAmount,
       lastSummary,
     };
   });
@@ -438,50 +464,80 @@ export default function DailySummaries() {
               <div className="text-center py-16 text-gray-500">אין צ׳אטרים</div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {chatterStats.map(({ chatter, summaries: cs, debts: cd, totalUSD, lastSummary }) => (
-                  <button
-                    key={chatter._id}
-                    onClick={() => setSelectedChatterId(chatter._id)}
-                    className="bg-gray-900 border border-gray-800 hover:border-blue-500/50 hover:bg-gray-800/60 rounded-xl p-5 text-right transition-all group"
-                  >
-                    {/* Avatar + name */}
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 rounded-full bg-blue-600/20 border border-blue-500/30 flex items-center justify-center shrink-0">
-                        <User className="w-5 h-5 text-blue-400" />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-bold text-white truncate group-hover:text-blue-300 transition-colors">
+                {chatterStats.map(({ chatter, summaries: cs, debts: cd, totalUSD, monthlyUSD, monthlyTelegram, monthlyOnlyfans, monthlyTransfers, monthlyOther, goalAmount, lastSummary }) => {
+                  const progress = goalAmount > 0 ? Math.min((monthlyUSD / goalAmount) * 100, 100) : 0;
+                  const progressColor = progress >= 100 ? "bg-green-500" : progress >= 60 ? "bg-blue-500" : progress >= 30 ? "bg-yellow-500" : "bg-red-500";
+                  const progressTextColor = progress >= 100 ? "text-green-500" : progress >= 60 ? "text-blue-500" : progress >= 30 ? "text-yellow-500" : "text-red-500";
+                  return (
+                    <button
+                      key={chatter._id}
+                      onClick={() => setSelectedChatterId(chatter._id)}
+                      className="bg-gray-900 border border-gray-800 hover:border-blue-500/50 hover:bg-gray-800/60 rounded-xl p-5 text-right transition-all group"
+                    >
+                      {/* Name */}
+                      <div className="mb-1">
+                        <p className="text-xl font-bold text-white truncate group-hover:text-blue-300 transition-colors text-center">
                           {chatter.name}
                         </p>
-                        {lastSummary && (
-                          <p className="text-xs text-gray-500 truncate">
-                            עדכון אחרון: {formatDate(lastSummary.date)}
-                          </p>
-                        )}
                       </div>
-                    </div>
 
-                    {/* Stats */}
-                    <div className="grid grid-cols-3 gap-2 text-center">
-                      <div className="bg-gray-800 rounded-lg py-2 px-1">
-                        <p className="text-lg font-bold text-white">{cs.length}</p>
-                        <p className="text-xs text-gray-500">סיכומים</p>
+                      {/* Month + amount on same row as bar */}
+                      <p className="text-sm text-gray-400 mb-10 text-center">
+                        {new Date().toLocaleString('he-IL', { month: 'long', year: 'numeric' })}
+                      </p>
+
+                      {/* Platform breakdown */}
+                      <div className="grid grid-cols-2 gap-1.5 -mt-2 mb-5">
+                        <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg px-2 py-1.5 text-center">
+                          <p className="text-xs text-blue-400 font-medium">${Math.round(monthlyTelegram)}</p>
+                          <p className="text-xs text-gray-600">טלגרם</p>
+                        </div>
+                        <div className="bg-cyan-500/10 border border-cyan-500/20 rounded-lg px-2 py-1.5 text-center">
+                          <p className="text-xs text-cyan-400 font-medium">${Math.round(monthlyOnlyfans)}</p>
+                          <p className="text-xs text-gray-600">אונלי</p>
+                        </div>
+                        <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg px-2 py-1.5 text-center">
+                          <p className="text-xs text-purple-400 font-medium">${Math.round(monthlyTransfers)}</p>
+                          <p className="text-xs text-gray-600">העברות</p>
+                        </div>
+                        <div className="bg-gray-500/10 border border-gray-500/20 rounded-lg px-2 py-1.5 text-center">
+                          <p className="text-xs text-gray-400 font-medium">${Math.round(monthlyOther)}</p>
+                          <p className="text-xs text-gray-600">אחר</p>
+                        </div>
                       </div>
-                      <div className={`rounded-lg py-2 px-1 ${cd.length > 0 ? "bg-red-900/30 border border-red-800/40" : "bg-gray-800"}`}>
-                        <p className={`text-lg font-bold ${cd.length > 0 ? "text-red-400" : "text-white"}`}>
-                          {cd.length}
+
+                      {/* Progress bar + amount */}
+                      <div className="mb-2">
+                        <div className="flex items-baseline justify-center gap-1 mb-2">
+                          {goalAmount > 0 && (
+                            <span className="text-xs text-gray-500">${Math.round(goalAmount)} /</span>
+                          )}
+                          <span className={`text-base font-bold ${goalAmount > 0 ? progressTextColor : 'text-white'}`}>${Math.round(monthlyUSD)}</span>
+                        </div>
+                        <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+                          {goalAmount > 0 && (
+                            <div
+                              className={`h-full rounded-full transition-all ${progressColor}`}
+                              style={{ width: `${progress}%` }}
+                            />
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-600 mt-1 h-4 text-center">
+                          {goalAmount > 0 ? `${Math.round(progress)}%` : ''}
                         </p>
-                        <p className="text-xs text-gray-500">חובות</p>
                       </div>
-                      <div className="bg-gray-800 rounded-lg py-2 px-1">
-                        <p className="text-sm font-bold text-green-400">
-                          ${Math.round(totalUSD)}
-                        </p>
-                        <p className="text-xs text-gray-500">סה"כ</p>
+
+                      {/* Meta */}
+                      <div className="flex items-center gap-3 text-xs text-white border-t border-gray-800 pt-2">
+                        <span>{cs.length} סיכומים</span>
+                        {cd.length > 0
+                          ? <span className="text-red-400 font-medium">{cd.length} חובות</span>
+                          : <span>0 חובות</span>
+                        }
                       </div>
-                    </div>
-                  </button>
-                ))}
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
