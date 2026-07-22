@@ -56,7 +56,7 @@ function SummaryWizard({ models, shiftId, onClose, onSuccess, setError }) {
   const [submitting, setSubmitting] = useState(false);
 
   const [form, setForm] = useState({
-    date: new Date().toISOString().split('T')[0],
+    date: new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' }),
     shiftType: '',
     modelPlatforms: [],
     availabilityStatus: 'full',

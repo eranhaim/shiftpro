@@ -48,7 +48,7 @@ function toInputDate(dateStr) {
 
 const EMPTY_FORM = {
   chatterId: "",
-  date: new Date().toISOString().split("T")[0],
+  date: new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' }),
   shiftType: "בוקר",
   incomeTelegram: 0,
   incomeOnlyfans: 0,
