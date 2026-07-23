@@ -301,19 +301,24 @@ export default function DailySummaries() {
     const chatterDebts = debts.filter(
       (d) => (d.chatterId?._id || d.chatterId) === chatter._id,
     );
-    const totalUSD = chatterSummaries.reduce(
-      (sum, s) => sum + (s.incomeTotalUSD || s.incomeTotal || 0),
-      0,
-    );
+    const VAT = 1.18;
+    const fallbackEURUSD = 1.08;
+    const fallbackILSUSD = 0.027;
+    const calcTelegramUSD = (s) => s.incomeTelegramUSD ?? (s.incomeTelegram || 0) * (s.rateEURUSD || fallbackEURUSD);
+    const calcOnlyfansUSD = (s) => s.incomeOnlyfansUSD ?? (s.incomeOnlyfans || 0);
+    const calcTransfersUSD = (s) => s.incomeTransfersUSD ?? ((s.incomeTransfers || 0) / VAT) * (s.rateILSUSD || fallbackILSUSD);
+    const calcOtherUSD = (s) => s.incomeOtherUSD ?? ((s.incomeOther || 0) / VAT) * (s.rateILSUSD || fallbackILSUSD);
+    const calcTotalUSD = (s) => s.incomeTotalUSD ?? (calcTelegramUSD(s) + calcOnlyfansUSD(s) + calcTransfersUSD(s) + calcOtherUSD(s));
+    const totalUSD = chatterSummaries.reduce((sum, s) => sum + calcTotalUSD(s), 0);
     // Current month income only
     const monthlySummaries = chatterSummaries.filter(
       (s) => s.date && s.date.slice(0, 7) === currentMonth.slice(0, 7)
     );
-    const monthlyUSD = monthlySummaries.reduce((sum, s) => sum + (s.incomeTotalUSD || s.incomeTotal || 0), 0);
-    const monthlyTelegram = monthlySummaries.reduce((sum, s) => sum + (s.incomeTelegramUSD || 0), 0);
-    const monthlyOnlyfans = monthlySummaries.reduce((sum, s) => sum + (s.incomeOnlyfansUSD ?? s.incomeOnlyfans ?? 0), 0);
-    const monthlyTransfers = monthlySummaries.reduce((sum, s) => sum + (s.incomeTransfersUSD || 0), 0);
-    const monthlyOther = monthlySummaries.reduce((sum, s) => sum + (s.incomeOtherUSD || 0), 0);
+    const monthlyUSD = monthlySummaries.reduce((sum, s) => sum + calcTotalUSD(s), 0);
+    const monthlyTelegram = monthlySummaries.reduce((sum, s) => sum + calcTelegramUSD(s), 0);
+    const monthlyOnlyfans = monthlySummaries.reduce((sum, s) => sum + calcOnlyfansUSD(s), 0);
+    const monthlyTransfers = monthlySummaries.reduce((sum, s) => sum + calcTransfersUSD(s), 0);
+    const monthlyOther = monthlySummaries.reduce((sum, s) => sum + calcOtherUSD(s), 0);
     const goalEntry = monthlyGoals.find(
       (g) => (g.chatterId?._id || g.chatterId) === chatter._id,
     );
