@@ -188,6 +188,44 @@ router.get("/my-summaries", async (req, res) => {
   }
 });
 
+// PUT /api/chatter-portal/my-summaries/:id — edit own summary
+router.put("/my-summaries/:id", async (req, res) => {
+  try {
+    const summary = await DailySummary.findOne({ _id: req.params.id, chatterId: req.chatter.id });
+    if (!summary) return res.status(404).json({ message: "Summary not found" });
+    const allowed = [
+      'date','shiftType','availabilityStatus','availabilityGapsDetail',
+      'hasDebts','debtsDetail','hasPendingSales','pendingSalesDetail',
+      'hasUnusualEvents','unusualEventsDetail','allDepositsVerified',
+      'incomeTelegram','incomeOnlyfans','incomeTransfers','incomeOther',
+      'improvementSuggestions','contentRequest','selfImprovementPoint','selfPreservationPoint',
+    ];
+    const update = {};
+    for (const key of allowed) {
+      if (req.body[key] !== undefined) update[key] = req.body[key];
+    }
+    update.incomeTotal = (Number(update.incomeTelegram ?? summary.incomeTelegram) || 0)
+      + (Number(update.incomeOnlyfans ?? summary.incomeOnlyfans) || 0)
+      + (Number(update.incomeTransfers ?? summary.incomeTransfers) || 0)
+      + (Number(update.incomeOther ?? summary.incomeOther) || 0);
+    const updated = await DailySummary.findByIdAndUpdate(req.params.id, update, { new: true });
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
+// DELETE /api/chatter-portal/my-summaries/:id — delete own summary
+router.delete("/my-summaries/:id", async (req, res) => {
+  try {
+    const summary = await DailySummary.findOneAndDelete({ _id: req.params.id, chatterId: req.chatter.id });
+    if (!summary) return res.status(404).json({ message: "Summary not found" });
+    res.json({ message: "Deleted" });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
 // GET /api/chatter-portal/available-shifts — future scheduled shifts to register for
 router.get("/available-shifts", async (req, res) => {
   try {

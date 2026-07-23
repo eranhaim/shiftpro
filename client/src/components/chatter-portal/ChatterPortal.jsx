@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import {
-  LogOut, Calendar, FileText, Clock,
+  LogOut, Calendar, FileText, Clock, Pencil, Trash2,
   ChevronRight, ChevronLeft, Target, TrendingUp,
   CheckCircle, XCircle, Loader2,
 } from 'lucide-react';
@@ -331,6 +331,7 @@ export default function ChatterPortal() {
 
   const [schedule, setSchedule] = useState([]);
   const [weekOffset, setWeekOffset] = useState(0);
+  const [editingSummary, setEditingSummary] = useState(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -503,6 +504,11 @@ export default function ChatterPortal() {
             className={`flex-1 py-3 text-sm font-medium transition-colors text-center ${tab === 'schedule' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-gray-400'}`}>
             <Clock className="w-4 h-4 inline ml-1" />
             לוח משמרות
+          </button>
+          <button onClick={() => setTab('summaries')}
+            className={`flex-1 py-3 text-sm font-medium transition-colors text-center ${tab === 'summaries' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-gray-400'}`}>
+            <FileText className="w-4 h-4 inline ml-1" />
+            הדוחות שלי
           </button>
         </div>
 
@@ -760,8 +766,56 @@ export default function ChatterPortal() {
               </div>
             </>
           )}
+
+          {/* ── Summaries Tab ── */}
+          {tab === 'summaries' && !loading && (
+            <div className="space-y-3">
+              {summaries.length === 0 ? (
+                <p className="text-center text-gray-500 py-8">אין דוחות עדיין</p>
+              ) : summaries.map(s => (
+                <div key={s._id} className="bg-gray-900 border border-gray-800 rounded-xl p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-white font-medium text-sm">{formatDate(s.date)}</span>
+                      {s.shiftType && <span className="mr-2 text-xs text-gray-400">{s.shiftType}</span>}
+                    </div>
+                    <button
+                      onClick={() => setEditingSummary(s)}
+                      className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors">
+                      <Pencil className="w-3 h-3" /> ערוך
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-xs text-gray-400 pb-2">
+                    <span>טלגרם: <span className="text-white">€{s.incomeTelegram || 0}</span></span>
+                    <span>אונליפאנס: <span className="text-white">${s.incomeOnlyfans || 0}</span></span>
+                    <span>העברות: <span className="text-white">₪{s.incomeTransfers || 0}</span></span>
+                    <span>אחר: <span className="text-white">₪{s.incomeOther || 0}</span></span>
+                  </div>
+                  {s.incomeTotalUSD != null && (
+                    <div className="text-xs font-semibold text-green-400 pt-2 border-t border-gray-800">{"סה\"כ: $"}{s.incomeTotalUSD}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Edit Summary Modal */}
+      {editingSummary && (
+        <EditSummaryModal
+          summary={editingSummary}
+          onClose={() => setEditingSummary(null)}
+          onSaved={(updated) => {
+            setSummaries(prev => prev.map(s => s._id === updated._id ? updated : s));
+            setEditingSummary(null);
+          }}
+          onDeleted={(id) => {
+            setSummaries(prev => prev.filter(s => s._id !== id));
+            setEditingSummary(null);
+          }}
+        />
+      )}
 
       {/* Summary Wizard */}
       {showWizard && (
@@ -773,6 +827,165 @@ export default function ChatterPortal() {
           setError={setError}
         />
       )}
+    </div>
+  );
+}
+
+/* ────────── EditSummaryModal ────────── */
+
+function EditSummaryModal({ summary, onClose, onSaved, onDeleted }) {
+  const [form, setForm] = useState({
+    date: summary.date ? new Date(summary.date).toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' }) : '',
+    shiftType: summary.shiftType || '',
+    incomeTelegram: summary.incomeTelegram || 0,
+    incomeOnlyfans: summary.incomeOnlyfans || 0,
+    incomeTransfers: summary.incomeTransfers || 0,
+    incomeOther: summary.incomeOther || 0,
+    availabilityStatus: summary.availabilityStatus || 'full',
+    availabilityGapsDetail: summary.availabilityGapsDetail || '',
+    hasDebts: summary.hasDebts || false,
+    debtsDetail: summary.debtsDetail || '',
+    hasPendingSales: summary.hasPendingSales || false,
+    pendingSalesDetail: summary.pendingSalesDetail || '',
+    hasUnusualEvents: summary.hasUnusualEvents || false,
+    unusualEventsDetail: summary.unusualEventsDetail || '',
+    allDepositsVerified: summary.allDepositsVerified || false,
+    improvementSuggestions: summary.improvementSuggestions || '',
+    contentRequest: summary.contentRequest || '',
+    selfImprovementPoint: summary.selfImprovementPoint || '',
+    selfPreservationPoint: summary.selfPreservationPoint || '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [error, setError] = useState('');
+
+  const set = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
+
+  async function handleSave() {
+    setSaving(true);
+    setError('');
+    try {
+      const res = await fetch(`${API}/chatter-portal/my-summaries/${summary._id}`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify(form),
+      });
+      if (!res.ok) throw new Error((await res.json()).message || 'שגיאה');
+      const updated = await res.json();
+      onSaved(updated);
+    } catch (err) {
+      setError(err.message);
+    }
+    setSaving(false);
+  }
+
+  async function handleDelete() {
+    setDeleting(true);
+    setError('');
+    try {
+      const res = await fetch(`${API}/chatter-portal/my-summaries/${summary._id}`, {
+        method: 'DELETE',
+        headers: getHeaders(),
+      });
+      if (!res.ok) throw new Error((await res.json()).message || 'שגיאה');
+      onDeleted(summary._id);
+    } catch (err) {
+      setError(err.message);
+    }
+    setDeleting(false);
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-3" onClick={onClose}>
+      <div className="bg-gray-900 border border-gray-700 rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-5 space-y-4" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold text-white">עריכת דוח</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-white">✕</button>
+        </div>
+
+        {error && <div className="text-red-400 text-sm bg-red-500/10 px-3 py-2 rounded-lg">{error}</div>}
+
+        <div className="space-y-3">
+          <div>
+            <label className="text-xs text-gray-400 block mb-1">תאריך</label>
+            <input type="date" value={form.date} onChange={e => set('date', e.target.value)}
+              className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500" />
+          </div>
+          <div>
+            <label className="text-xs text-gray-400 block mb-1">סוג משמרת</label>
+            <div className="flex gap-2">
+              {['בוקר', 'ערב', 'כפולה'].map(t => (
+                <button key={t} type="button" onClick={() => set('shiftType', t)}
+                  className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${form.shiftType === t ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
+                  {t}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-gray-400 block mb-1">טלגרם (€)</label>
+              <input type="number" min="0" value={form.incomeTelegram} onChange={e => set('incomeTelegram', e.target.value)}
+                className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500" />
+            </div>
+            <div>
+              <label className="text-xs text-gray-400 block mb-1">אונליפאנס ($)</label>
+              <input type="number" min="0" value={form.incomeOnlyfans} onChange={e => set('incomeOnlyfans', e.target.value)}
+                className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500" />
+            </div>
+            <div>
+              <label className="text-xs text-gray-400 block mb-1">העברות (₪)</label>
+              <input type="number" min="0" value={form.incomeTransfers} onChange={e => set('incomeTransfers', e.target.value)}
+                className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500" />
+            </div>
+            <div>
+              <label className="text-xs text-gray-400 block mb-1">אחר (₪)</label>
+              <input type="number" min="0" value={form.incomeOther} onChange={e => set('incomeOther', e.target.value)}
+                className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500" />
+            </div>
+          </div>
+          <div>
+            <label className="text-xs text-gray-400 block mb-1">הערות שיפור</label>
+            <textarea value={form.improvementSuggestions} onChange={e => set('improvementSuggestions', e.target.value)} rows={2}
+              className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 resize-none" />
+          </div>
+        </div>
+
+        <div className="flex gap-3 pt-2">
+          <button onClick={handleSave} disabled={saving || deleting}
+            className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white py-2.5 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2">
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+            {saving ? 'שומר...' : 'שמור'}
+          </button>
+          <button onClick={onClose} disabled={saving || deleting}
+            className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-xl text-sm font-medium transition-colors">
+            ביטול
+          </button>
+        </div>
+
+        {!confirmDelete ? (
+          <button onClick={() => setConfirmDelete(true)} disabled={saving || deleting}
+            className="w-full text-red-400 hover:text-red-300 hover:bg-red-400/10 py-2 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2">
+            <Trash2 className="w-4 h-4" /> מחק דוח
+          </button>
+        ) : (
+          <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 space-y-2">
+            <p className="text-red-400 text-sm text-center">האם אתה בטוח? הפעולה בלתי הפיכה</p>
+            <div className="flex gap-2">
+              <button onClick={handleDelete} disabled={deleting}
+                className="flex-1 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2">
+                {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                {deleting ? 'מוחק...' : 'כן, מחק'}
+              </button>
+              <button onClick={() => setConfirmDelete(false)} disabled={deleting}
+                className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 rounded-lg text-sm font-medium transition-colors">
+                ביטול
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
