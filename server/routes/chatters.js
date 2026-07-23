@@ -21,6 +21,7 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const data = { ...req.body };
+    if (data.email) data.email = data.email.toLowerCase().trim();
     if (!data.token) {
       data.token = crypto.randomBytes(16).toString('hex');
     }
@@ -39,6 +40,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const data = { ...req.body };
+    if (data.email) data.email = data.email.toLowerCase().trim();
     if (data.password && data.password.trim()) {
       data.rawPassword = data.password;
       data.password = await bcrypt.hash(data.password, 10);
