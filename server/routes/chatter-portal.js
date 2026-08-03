@@ -423,7 +423,7 @@ router.get("/schedule", async (req, res) => {
 
     const shifts = await Shift.find({
       date: { $gte: start, $lt: end },
-      status: { $in: ["approved", "scheduled", "active", "completed"] },
+      status: { $in: ["pending", "approved", "scheduled", "active", "completed"] },
     }).populate("chatterId", "name");
 
     const shiftIds = shifts.map((s) => s._id);

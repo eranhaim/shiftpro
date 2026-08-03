@@ -333,6 +333,10 @@ export default function ChatterPortal() {
   const [weekOffset, setWeekOffset] = useState(0);
   const [editingSummary, setEditingSummary] = useState(null);
 
+  // Weekly shift request state
+  const [weeklyShiftSelections, setWeeklyShiftSelections] = useState({});
+  const [submittingWeekly, setSubmittingWeekly] = useState(false);
+
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
@@ -359,14 +363,66 @@ export default function ChatterPortal() {
   const loadSchedule = useCallback(async () => {
     const ws = getWeekStart(new Date());
     ws.setDate(ws.getDate() + weekOffset * 7);
+    setSchedule([]);
     try {
-      const res = await fetch(`${API}/chatter-portal/schedule?weekStart=${ws.toISOString().split('T')[0]}`, { headers: getHeaders() });
-      if (res.ok) setSchedule(await res.json());
+      const wsKey = `${ws.getFullYear()}-${String(ws.getMonth()+1).padStart(2,'0')}-${String(ws.getDate()).padStart(2,'0')}`;
+      const res = await fetch(`${API}/chatter-portal/schedule?weekStart=${wsKey}`, { headers: getHeaders() });
+      if (res.ok) {
+        const data = await res.json();
+        // API returns { weekStart, shifts } — group by chatter
+        const shiftsArr = Array.isArray(data) ? data : (data.shifts || []);
+        const byChatter = {};
+        shiftsArr.forEach(s => {
+          const id = (typeof s.chatterId === 'object' ? s.chatterId?._id : s.chatterId)?.toString();
+          if (!id) return;
+          const name = s.chatterName || s.chatterId?.name || '—';
+          if (!byChatter[id]) byChatter[id] = { chatterId: id, chatterName: name, days: {} };
+          const dateKey = (typeof s.date === 'string' ? s.date : s.date.toISOString()).slice(0, 10);
+          if (!byChatter[id].days[dateKey]) byChatter[id].days[dateKey] = [];
+          byChatter[id].days[dateKey].push({
+            type: s.startTime === '12:00' ? 'morning' : 'evening',
+            model: s.assignments?.[0]?.modelName || null,
+            status: s.status,
+          });
+        });
+        const rows = Object.values(byChatter).filter(row => Object.keys(row.days).length > 0);
+        rows.sort((a, b) => {
+          const aIsMe = a.chatterId === user?._id || a.chatterName === user?.name;
+          const bIsMe = b.chatterId === user?._id || b.chatterName === user?.name;
+          return aIsMe ? -1 : bIsMe ? 1 : 0;
+        });
+        setSchedule(rows);
+      }
     } catch { /* ignore */ }
   }, [weekOffset]);
 
   useEffect(() => { loadData(); }, [loadData]);
   useEffect(() => { loadSchedule(); }, [loadSchedule]);
+
+  // Sync weeklyShiftSelections from existing shifts for next week
+  useEffect(() => {
+    if (!shifts.length) return;
+    // DB stores date-only strings as UTC midnight ("2026-08-10T00:00:00.000Z") → slice is safe
+    // But for local Date objects (nextWs/nextWe) we must use local parts
+    const localKey = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    const getDateKey = (dateVal) => (typeof dateVal === 'string' ? dateVal : dateVal.toISOString()).slice(0, 10);
+    const nextWs = getWeekStart(new Date());
+    nextWs.setDate(nextWs.getDate() + 7);
+    const nextWe = new Date(nextWs);
+    nextWe.setDate(nextWe.getDate() + 7);
+    const nextWsKey = localKey(nextWs);
+    const nextWeKey = localKey(nextWe);
+    const selections = {};
+    shifts.forEach(s => {
+      const dateKey = getDateKey(s.date);
+      if (dateKey >= nextWsKey && dateKey < nextWeKey && !['rejected', 'cancelled'].includes(s.status)) {
+        if (!selections[dateKey]) selections[dateKey] = {};
+        if (s.startTime === '12:00') selections[dateKey].morning = true;
+        if (s.startTime === '19:00') selections[dateKey].evening = true;
+      }
+    });
+    setWeeklyShiftSelections(selections);
+  }, [shifts]);
 
   async function submitShiftRequest(e) {
     e.preventDefault();
@@ -503,7 +559,7 @@ export default function ChatterPortal() {
           <button onClick={() => setTab('schedule')}
             className={`flex-1 py-3 text-sm font-medium transition-colors text-center ${tab === 'schedule' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-gray-400'}`}>
             <Clock className="w-4 h-4 inline ml-1" />
-            לוח משמרות
+            בקשת משמרות
           </button>
           <button onClick={() => setTab('summaries')}
             className={`flex-1 py-3 text-sm font-medium transition-colors text-center ${tab === 'summaries' ? 'text-blue-400 border-b-2 border-blue-400' : 'text-gray-400'}`}>
@@ -558,7 +614,6 @@ export default function ChatterPortal() {
                       </span>
                     )}
                   </div>
-
                   <div className="flex items-end justify-between gap-2">
                     <div>
                       <span className="text-2xl font-bold text-white">
@@ -576,7 +631,6 @@ export default function ChatterPortal() {
                       </span>
                     )}
                   </div>
-
                   {monthlyGoal.goalAmount > 0 ? (
                     <div className="space-y-1">
                       <div className="w-full bg-gray-800 rounded-full h-3 overflow-hidden">
@@ -619,153 +673,243 @@ export default function ChatterPortal() {
                 </div>
               )}
 
-              {/* Upcoming shifts */}
-              {upcomingShifts.length > 0 && (
-                <div className="space-y-2">
-                  <h3 className="text-sm font-semibold text-gray-400">משמרות קרובות</h3>
-                  {upcomingShifts.map(s => {
-                    const st = statusMap[s.status] || statusMap.pending;
+              {/* Schedule grid (לוח משמרות) */}
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold text-gray-400">לוח משמרות</h3>
+                <div className="flex items-center justify-between mb-1">
+                  <button onClick={() => setWeekOffset(o => o - 1)} className="p-1.5 text-gray-400 hover:text-white transition-colors">
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                  <span className="text-xs text-white font-medium">
+                    {formatDate(weekDates[0].toISOString())} – {formatDate(weekDates[6].toISOString())}
+                  </span>
+                  <button onClick={() => setWeekOffset(o => o + 1)} className="p-1.5 text-gray-400 hover:text-white transition-colors">
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="overflow-x-auto -mx-4 px-4">
+                  <table className="w-full text-xs border-collapse min-w-[600px]">
+                    <thead>
+                      <tr>
+                        <th className="bg-gray-900 border border-gray-800 px-2 py-2 text-gray-400 text-right sticky right-0 z-10 min-w-[80px]">צ׳אטר</th>
+                        {weekDates.map((d, i) => {
+                          const isToday = d.toDateString() === new Date().toDateString();
+                          return (
+                            <th key={i} className={`border border-gray-800 px-2 py-2 text-center min-w-[80px] ${isToday ? 'bg-blue-900/30 text-blue-400' : 'bg-gray-900 text-gray-400'}`}>
+                              <div>{dayNames[i]}</div>
+                              <div className="text-[10px] opacity-70">{d.getDate()}/{d.getMonth() + 1}</div>
+                            </th>
+                          );
+                        })}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(Array.isArray(schedule) ? schedule : []).map((row) => {
+                        const isMe = row.chatterId === user?._id || row.chatterName === user?.name;
+                        return (
+                          <tr key={row.chatterId || row.chatterName} className={isMe ? 'bg-blue-900/10' : ''}>
+                            <td className={`border border-gray-800 px-2 py-2 text-right sticky right-0 z-10 font-medium whitespace-nowrap ${isMe ? 'bg-blue-900/20 text-blue-300' : 'bg-gray-900 text-white'}`}>
+                              {row.chatterName}{isMe ? ' (את/ה)' : ''}
+                            </td>
+                            {weekDates.map((d, di) => {
+                              const dateKey = d.toISOString().split('T')[0];
+                              const dayShifts = (row.days || {})[dateKey] || [];
+                              return (
+                                <td key={di} className="border border-gray-800 px-1 py-1 text-center align-top">
+                                  <div className="min-h-20">
+                                    {dayShifts.map((ds, si) => {
+                                      const approved = ['approved', 'scheduled', 'active', 'completed'].includes(ds.status);
+                                      return (
+                                        <div key={si} className={`text-[10px] rounded px-1 py-0.5 mb-0.5 ${approved ? 'bg-green-900/40 text-green-400' : 'bg-orange-900/40 text-orange-400'}`}>
+                                          <div>{approved ? 'אושר' : 'ממתין'}</div>
+                                          <div>{ds.type === 'morning' ? 'בוקר' : 'ערב'}</div>
+                                          {ds.model && <div className="opacity-70 truncate">{ds.model}</div>}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        );
+                      })}
+                      {(!Array.isArray(schedule) || schedule.length === 0) && (
+                        <tr>
+                          <td colSpan={8} className="border border-gray-800 px-4 py-8 text-center text-gray-500">
+                            אין נתונים לשבוע זה
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* ── Schedule Tab (בקשת משמרות) ── */}
+          {tab === 'schedule' && !loading && (() => {
+            const nextWeekStart = (() => {
+              const ws = getWeekStart(new Date());
+              ws.setDate(ws.getDate() + 7);
+              return ws;
+            })();
+            const nextWeekDates = Array.from({ length: 7 }, (_, i) => {
+              const d = new Date(nextWeekStart);
+              d.setDate(d.getDate() + i);
+              return d;
+            });
+            // Build set of already-submitted shifts — take date string directly from DB to avoid UTC conversion
+            const getDateKey = (dateVal) => (typeof dateVal === 'string' ? dateVal : dateVal.toISOString()).slice(0, 10);
+            const submittedSet = new Set(
+              shifts
+                .filter(s => !['rejected', 'cancelled'].includes(s.status))
+                .map(s => {
+                  const dk = getDateKey(s.date);
+                  const type = s.startTime === '12:00' ? 'morning' : s.startTime === '19:00' ? 'evening' : null;
+                  return type ? `${dk}_${type}` : null;
+                })
+                .filter(Boolean)
+            );
+            const isSubmitted = (dateKey, type) => submittedSet.has(`${dateKey}_${type}`);
+            const toggleSelection = (dateKey, type) => {
+              if (isSubmitted(dateKey, type)) return; // can't uncheck already submitted
+              setWeeklyShiftSelections(prev => {
+                const day = prev[dateKey] || {};
+                return { ...prev, [dateKey]: { ...day, [type]: !day[type] } };
+              });
+            };
+            const hasNewSelection = Object.entries(weeklyShiftSelections).some(([dk, sel]) =>
+              (sel.morning && !isSubmitted(dk, 'morning')) || (sel.evening && !isSubmitted(dk, 'evening'))
+            );
+            const submitWeeklyRequest = async () => {
+              if (!hasNewSelection) { setError('יש לבחור לפחות משמרת חדשה אחת'); return; }
+              setSubmittingWeekly(true);
+              setError('');
+              try {
+                const requests = [];
+                for (const [dateKey, sel] of Object.entries(weeklyShiftSelections)) {
+                  if (sel.morning && !isSubmitted(dateKey, 'morning')) requests.push(fetch(`${API}/chatter-portal/register-shift`, { method: 'POST', headers: getHeaders(), body: JSON.stringify({ date: dateKey, startTime: '12:00', endTime: '19:00', type: 'morning' }) }));
+                  if (sel.evening && !isSubmitted(dateKey, 'evening')) requests.push(fetch(`${API}/chatter-portal/register-shift`, { method: 'POST', headers: getHeaders(), body: JSON.stringify({ date: dateKey, startTime: '19:00', endTime: '02:00', type: 'night' }) }));
+                }
+                const results = await Promise.all(requests);
+                for (const res of results) {
+                  if (!res.ok) { const data = await res.json(); throw new Error(data.message || 'שגיאה ברישום'); }
+                }
+                await loadData();
+              } catch (err) {
+                setError(err.message);
+              }
+              setSubmittingWeekly(false);
+            };
+            return (
+              <div className="space-y-4">
+                {/* Next week header */}
+                <div className="text-center">
+                  <h3 className="text-base font-bold text-white">שבוע הבא</h3>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {formatDate(nextWeekDates[0].toISOString())} – {formatDate(nextWeekDates[6].toISOString())}
+                  </p>
+                </div>
+
+                {/* Day cards */}
+                <div className="grid grid-cols-7 gap-1.5">
+                  {nextWeekDates.map((d, i) => {
+                    // Use local date parts to match how the DB stores date-only strings
+                    const dateKey = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+                    const sel = weeklyShiftSelections[dateKey] || {};
                     return (
-                      <div key={s._id} className="bg-gray-900 border border-gray-800 rounded-lg p-4">
-                        <div className="flex items-center justify-between gap-2 mb-1">
-                          <span className="text-white font-medium">{formatDate(s.date)}</span>
-                          <span className={`text-xs px-2 py-0.5 rounded-full whitespace-nowrap ${st.cls}`}>{st.label}</span>
+                      <div key={dateKey} className="bg-gray-900 border border-gray-800 rounded-xl p-2 flex flex-col items-center gap-2">
+                        <div className="text-center">
+                          <div className="text-[10px] text-gray-400">{d.getDate()}/{d.getMonth() + 1}</div>
+                          <div className="text-base font-bold text-white">{dayNames[d.getDay()]}</div>
                         </div>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2 text-sm text-gray-400">
-                            <Clock className="w-3.5 h-3.5" />
-                            <span>{s.startTime}–{s.endTime}</span>
-                          </div>
-                          {['pending', 'approved', 'scheduled'].includes(s.status) && (
-                            <button onClick={() => cancelShift(s._id)}
-                              className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1 transition-colors">
-                              <XCircle className="w-3.5 h-3.5" /> ביטול משמרת
-                            </button>
-                          )}
+                        <div className="flex gap-2">
+                          <label className={`flex flex-col items-center gap-1 ${isSubmitted(dateKey, 'morning') ? 'cursor-default' : 'cursor-pointer'}`}>
+                            <input
+                              type="checkbox"
+                              checked={!!sel.morning}
+                              onChange={() => toggleSelection(dateKey, 'morning')}
+                              disabled={isSubmitted(dateKey, 'morning')}
+                              className="rounded w-4 h-4 border-gray-600 focus:ring-amber-500 text-amber-500 bg-gray-700 disabled:opacity-100"
+                            />
+                            <span className={`text-[10px] ${isSubmitted(dateKey, 'morning') ? 'text-amber-300 font-semibold' : 'text-amber-400'}`}>בוקר</span>
+                          </label>
+                          <label className={`flex flex-col items-center gap-1 ${isSubmitted(dateKey, 'evening') ? 'cursor-default' : 'cursor-pointer'}`}>
+                            <input
+                              type="checkbox"
+                              checked={!!sel.evening}
+                              onChange={() => toggleSelection(dateKey, 'evening')}
+                              disabled={isSubmitted(dateKey, 'evening')}
+                              className="rounded w-4 h-4 border-gray-600 focus:ring-indigo-500 text-indigo-500 bg-gray-700 disabled:opacity-100"
+                            />
+                            <span className={`text-[10px] ${isSubmitted(dateKey, 'evening') ? 'text-indigo-300 font-semibold' : 'text-indigo-400'}`}>ערב</span>
+                          </label>
                         </div>
-                        {(s.assignments || []).length > 0 && (
-                          <div className="mt-2 flex flex-wrap gap-1">
-                            {s.assignments.map((a, i) => (
-                              <span key={i} className="bg-gray-800 text-gray-300 text-xs px-2 py-0.5 rounded truncate max-w-[200px]">
-                                {a.modelName} · {a.platform === 'telegram' ? 'טלגרם' : 'אונלי'}
-                              </span>
-                            ))}
-                          </div>
-                        )}
                       </div>
                     );
                   })}
                 </div>
-              )}
 
-              {/* Shift request form */}
-              <div className="bg-gray-900 border border-gray-800 rounded-lg p-4 space-y-3">
-                <h3 className="text-sm font-semibold text-white">בקשת משמרת</h3>
-                <form onSubmit={submitShiftRequest} className="space-y-3">
-                  <div>
-                    <label className="text-xs text-gray-400 block mb-1">תאריך</label>
-                    <input type="date" value={reqDate} onChange={e => setReqDate(e.target.value)} required
-                      className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500" />
-                  </div>
-                  <div className="flex gap-4">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" checked={reqMorning} onChange={e => setReqMorning(e.target.checked)}
-                        className="rounded bg-gray-700 border-gray-600 text-blue-500 focus:ring-blue-500" />
-                      <span className="text-sm text-white">בוקר 12:00–19:00</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" checked={reqNight} onChange={e => setReqNight(e.target.checked)}
-                        className="rounded bg-gray-700 border-gray-600 text-blue-500 focus:ring-blue-500" />
-                      <span className="text-sm text-white">לילה 19:00–02:00</span>
-                    </label>
-                  </div>
-                  <button type="submit" disabled={requesting}
-                    className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2">
-                    {requesting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                    {requesting ? 'שולח...' : 'שלח בקשה'}
-                  </button>
-                </form>
-              </div>
-            </>
-          )}
-
-          {/* ── Schedule Tab ── */}
-          {tab === 'schedule' && !loading && (
-            <>
-              {/* Week navigation */}
-              <div className="flex items-center justify-between">
-                <button onClick={() => setWeekOffset(o => o - 1)} className="p-2 text-gray-400 hover:text-white transition-colors">
-                  <ChevronRight className="w-5 h-5" />
+                {/* Submit button */}
+                <button
+                  onClick={submitWeeklyRequest}
+                  disabled={submittingWeekly || !hasNewSelection}
+                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white py-3 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2">
+                  {submittingWeekly ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                  {submittingWeekly ? 'שולח...' : 'הגשת משמרת'}
                 </button>
-                <div className="text-center">
-                  <span className="text-sm text-white font-medium">
-                    {formatDate(weekDates[0].toISOString())} – {formatDate(weekDates[6].toISOString())}
-                  </span>
-                  {weekOffset !== 0 && (
-                    <button onClick={() => setWeekOffset(0)} className="block mx-auto text-xs text-blue-400 hover:text-blue-300 mt-1">
-                      חזרה לשבוע נוכחי
-                    </button>
-                  )}
-                </div>
-                <button onClick={() => setWeekOffset(o => o + 1)} className="p-2 text-gray-400 hover:text-white transition-colors">
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
-              </div>
 
-              {/* Schedule grid */}
-              <div className="overflow-x-auto -mx-4 px-4">
-                <table className="w-full text-xs border-collapse min-w-[600px]">
-                  <thead>
-                    <tr>
-                      <th className="bg-gray-900 border border-gray-800 px-2 py-2 text-gray-400 text-right sticky right-0 z-10 min-w-[80px]">צ׳אטר</th>
-                      {weekDates.map((d, i) => {
-                        const isToday = d.toDateString() === new Date().toDateString();
-                        return (
-                          <th key={i} className={`border border-gray-800 px-2 py-2 text-center min-w-[80px] ${isToday ? 'bg-blue-900/30 text-blue-400' : 'bg-gray-900 text-gray-400'}`}>
-                            <div>{dayNames[i]}</div>
-                            <div className="text-[10px] opacity-70">{d.getDate()}/{d.getMonth() + 1}</div>
-                          </th>
-                        );
-                      })}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(Array.isArray(schedule) ? schedule : []).map((row) => {
-                      const isMe = row.chatterId === user?._id || row.chatterName === user?.name;
+                {/* My requests */}
+                {upcomingShifts.length > 0 && (
+                  <div className="space-y-2">
+                    <h3 className="text-sm font-semibold text-gray-400">הבקשות שלי</h3>
+                    {upcomingShifts.map(s => {
+                      const st = statusMap[s.status] || statusMap.pending;
+                      const d = new Date(s.date);
+                      const hebrewDay = dayNames[d.getDay()];
                       return (
-                        <tr key={row.chatterId || row.chatterName} className={isMe ? 'bg-blue-900/10' : ''}>
-                          <td className={`border border-gray-800 px-2 py-2 text-right sticky right-0 z-10 font-medium whitespace-nowrap ${isMe ? 'bg-blue-900/20 text-blue-300' : 'bg-gray-900 text-white'}`}>
-                            {row.chatterName}{isMe ? ' (את/ה)' : ''}
-                          </td>
-                          {weekDates.map((d, di) => {
-                            const dateKey = d.toISOString().split('T')[0];
-                            const dayShifts = (row.days || {})[dateKey] || [];
-                            return (
-                              <td key={di} className="border border-gray-800 px-1 py-1 text-center align-top">
-                                {dayShifts.map((ds, si) => (
-                                  <div key={si} className={`text-[10px] rounded px-1 py-0.5 mb-0.5 ${ds.type === 'morning' ? 'bg-amber-900/40 text-amber-400' : 'bg-indigo-900/40 text-indigo-400'}`}>
-                                    <div>{ds.type === 'morning' ? 'בוקר' : 'ערב'}</div>
-                                    {ds.model && <div className="opacity-70 truncate">{ds.model}</div>}
-                                  </div>
-                                ))}
-                              </td>
-                            );
-                          })}
-                        </tr>
+                        <div key={s._id} className="bg-gray-900 border border-gray-800 rounded-lg p-4">
+                          <div className="flex items-center justify-between gap-2">
+                            <div>
+                              <div className="text-lg font-bold text-white">{hebrewDay}</div>
+                              <div className="text-xs text-gray-400">{formatDate(s.date)}</div>
+                              <div className="flex items-center gap-1 text-xs text-gray-400 mt-0.5">
+                                <Clock className="w-3 h-3" />
+                                <span>{s.startTime}–{s.endTime}</span>
+                                <span className={`mr-1 font-medium ${s.startTime === '12:00' ? 'text-amber-400' : 'text-indigo-400'}`}>
+                                  {s.startTime === '12:00' ? 'בוקר' : 'ערב'}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="flex flex-col items-end gap-2">
+                              <span className={`text-xs px-2 py-0.5 rounded-full whitespace-nowrap ${st.cls}`}>{st.label}</span>
+                              {['pending', 'approved', 'scheduled'].includes(s.status) && (
+                                <button onClick={() => cancelShift(s._id)}
+                                  className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1 transition-colors">
+                                  <XCircle className="w-3.5 h-3.5" /> ביטול
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                          {(s.assignments || []).length > 0 && (
+                            <div className="mt-2 flex flex-wrap gap-1">
+                              {s.assignments.map((a, i) => (
+                                <span key={i} className="bg-gray-800 text-gray-300 text-xs px-2 py-0.5 rounded truncate max-w-[200px]">
+                                  {a.modelName} · {a.platform === 'telegram' ? 'טלגרם' : 'אונלי'}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       );
                     })}
-                    {(!Array.isArray(schedule) || schedule.length === 0) && (
-                      <tr>
-                        <td colSpan={8} className="border border-gray-800 px-4 py-8 text-center text-gray-500">
-                          אין נתונים לשבוע זה
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+                  </div>
+                )}
               </div>
-            </>
-          )}
+            );
+          })()}
 
           {/* ── Summaries Tab ── */}
           {tab === 'summaries' && !loading && (
