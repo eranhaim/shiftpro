@@ -128,7 +128,6 @@ function calculateDailyWage(tier, incomeTotalUSD) {
     const base = total * 0.12;
     const bonus = Math.floor(total / 1000) * 20;
     wage = base + bonus;
-    luckyWheelSpin = total >= 4000;
   } else if (tier === 'C') {
     const base = total * 0.10;
     const per500 = Math.floor(total / 500) * 10;
@@ -138,7 +137,7 @@ function calculateDailyWage(tier, incomeTotalUSD) {
 
   return {
     dailyWage: Math.round(wage * 100) / 100,
-    luckyWheelSpin,
+    luckyWheelSpin: total >= 4000,
   };
 }
 

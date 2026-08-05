@@ -325,6 +325,7 @@ export default function DailySummaries() {
       (g) => (g.chatterId?._id || g.chatterId) === chatter._id,
     );
     const goalAmount = goalEntry?.goalAmount || 0;
+    const monthlyWage = monthlySummaries.reduce((sum, s) => sum + (s.dailyWage || 0), 0);
     const lastSummary = [...chatterSummaries].sort(
       (a, b) => new Date(b.date) - new Date(a.date),
     )[0];
@@ -339,6 +340,7 @@ export default function DailySummaries() {
       monthlyTransfers,
       monthlyOther,
       goalAmount,
+      monthlyWage,
       lastSummary,
     };
   });
@@ -426,7 +428,7 @@ export default function DailySummaries() {
               <div className="text-center py-16 text-gray-500">אין צ׳אטרים</div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {chatterStats.map(({ chatter, summaries: cs, debts: cd, totalUSD, monthlyUSD, monthlyTelegram, monthlyOnlyfans, monthlyTransfers, monthlyOther, goalAmount, lastSummary }) => {
+                {chatterStats.map(({ chatter, summaries: cs, debts: cd, totalUSD, monthlyUSD, monthlyTelegram, monthlyOnlyfans, monthlyTransfers, monthlyOther, goalAmount, monthlyWage, lastSummary }) => {
                   const progress = goalAmount > 0 ? Math.min((monthlyUSD / goalAmount) * 100, 100) : 0;
                   const progressColor = progress >= 100 ? "bg-green-500" : progress >= 60 ? "bg-blue-500" : progress >= 30 ? "bg-yellow-500" : "bg-red-500";
                   const progressTextColor = progress >= 100 ? "text-green-500" : progress >= 60 ? "text-blue-500" : progress >= 30 ? "text-yellow-500" : "text-red-500";
@@ -487,6 +489,12 @@ export default function DailySummaries() {
                         <p className="text-xs text-gray-600 mt-1 h-4 text-center">
                           {goalAmount > 0 ? `${Math.round(progress)}%` : ''}
                         </p>
+                      </div>
+
+                      {/* Monthly wage */}
+                      <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg px-3 py-2 mb-3 text-center">
+                        <p className="text-xs text-gray-500 mb-0.5">שכר חודשי</p>
+                        <p className="text-sm font-bold text-purple-400">${monthlyWage.toFixed(2)}</p>
                       </div>
 
                       {/* Meta */}
@@ -823,6 +831,9 @@ export default function DailySummaries() {
                           <span className="text-purple-400 font-bold text-sm">
                             שכר: ${s.dailyWage.toFixed(2)}
                           </span>
+                        )}
+                        {s.luckyWheelSpin && (
+                          <span className="text-lg" title="סיבוב גלגל מזל!">🎡</span>
                         )}
                         <button
                           onClick={() => setViewingSummary(s)}
