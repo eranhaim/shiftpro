@@ -2,9 +2,20 @@ import pkg from 'whatsapp-web.js';
 const { Client, LocalAuth } = pkg;
 import QRCode from 'qrcode';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const AUTH_PATH = path.join(__dirname, '..', '.wwebjs_auth');
+
+function clearStaleLocks() {
+  const sessionDir = path.join(AUTH_PATH, 'session');
+  if (!fs.existsSync(sessionDir)) return;
+  for (const f of ['SingletonLock', 'SingletonSocket', 'SingletonCookie']) {
+    const fp = path.join(sessionDir, f);
+    try { fs.unlinkSync(fp); } catch {}
+  }
+}
 
 let client = null;
 let connected = false;
@@ -16,7 +27,7 @@ let initializing = false;
 function createClient() {
   client = new Client({
     authStrategy: new LocalAuth({
-      dataPath: path.join(__dirname, '..', '.wwebjs_auth'),
+      dataPath: AUTH_PATH,
     }),
     puppeteer: {
       headless: true,
@@ -26,6 +37,10 @@ function createClient() {
         '--disable-dev-shm-usage',
         '--disable-gpu',
         '--single-process',
+        '--no-zygote',
+        '--disable-extensions',
+        '--disable-software-rasterizer',
+        '--disable-dbus',
       ],
       executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
     },
@@ -88,15 +103,13 @@ export async function connect() {
   latestQR = null;
   latestQRDataURL = null;
 
+  clearStaleLocks();
   if (!client) createClient();
 
-  try {
-    await client.initialize();
-  } catch (err) {
+  client.initialize().catch((err) => {
     console.error('[WhatsApp] Initialize error:', err.message);
     initializing = false;
-    throw err;
-  }
+  });
 
   return { message: 'Initializing... QR code will appear shortly' };
 }
