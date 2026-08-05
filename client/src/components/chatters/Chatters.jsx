@@ -372,10 +372,11 @@ export default function Chatters() {
     }).catch(() => {});
   };
 
-  const handleTierChange = async (id, tier) => {
+  const handleTierChange = async (id, value) => {
+    const bonusTier = (value === 'אוטומטי' || !value) ? null : value.replace('Tier ', '');
     try {
-      await updateChatter(id, { tier });
-      setChatters((prev) => prev.map((c) => c._id === id ? { ...c, tier } : c));
+      await updateChatter(id, { bonusTier });
+      setChatters((prev) => prev.map((c) => c._id === id ? { ...c, bonusTier } : c));
     } catch (err) {
       toast.error(err.message);
     }
@@ -490,7 +491,7 @@ export default function Chatters() {
                     </td>
                     <td className="py-3 px-4">
                       <select
-                        value={c.tier || 'אוטומטי'}
+                        value={c.bonusTier ? `Tier ${c.bonusTier}` : 'אוטומטי'}
                         onChange={(e) => handleTierChange(c._id, e.target.value)}
                         className="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-blue-500 min-w-[100px]"
                       >

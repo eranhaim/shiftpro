@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import DailySummary from '../models/DailySummary.js';
 import Shift from '../models/Shift.js';
+import Chatter from '../models/Chatter.js';
 import auth from '../middleware/auth.js';
 
 async function fetchExchangeRates() {
@@ -31,6 +32,31 @@ function calculateUSD({ incomeTelegram, incomeOnlyfans, incomeTransfers, incomeO
     incomeTransfersUSD: Math.round(transfersUSD * 100) / 100,
     incomeOtherUSD:     Math.round(otherUSD     * 100) / 100,
     incomeTotalUSD:     Math.round(totalUSD     * 100) / 100,
+  };
+}
+
+function calculateDailyWage(tier, incomeTotalUSD) {
+  const total = Number(incomeTotalUSD) || 0;
+  let wage = 0;
+  let luckyWheelSpin = false;
+
+  if (tier === 'A') {
+    wage = total * 0.15;
+  } else if (tier === 'B') {
+    const base = total * 0.12;
+    const bonus = Math.floor(total / 1000) * 20;
+    wage = base + bonus;
+    luckyWheelSpin = total >= 4000;
+  } else if (tier === 'C') {
+    const base = total * 0.10;
+    const per500 = Math.floor(total / 500) * 10;
+    const per1000 = Math.floor(total / 1000) * 25;
+    wage = base + per500 + per1000;
+  }
+
+  return {
+    dailyWage: Math.round(wage * 100) / 100,
+    luckyWheelSpin,
   };
 }
 
@@ -138,9 +164,12 @@ router.get('/', async (req, res) => {
 // POST /api/daily-summaries
 router.post('/', async (req, res) => {
   try {
+    const chatter = await Chatter.findById(req.body.chatterId).select('bonusTier');
+    const tier = req.body.tier || chatter?.bonusTier || null;
     const rates = await fetchExchangeRates();
     const usd = calculateUSD(req.body, rates);
-    const summary = await DailySummary.create({ ...req.body, ...usd, rateEURUSD: rates.rateEURUSD, rateILSUSD: rates.rateILSUSD });
+    const wageData = calculateDailyWage(tier, usd.incomeTotalUSD);
+    const summary = await DailySummary.create({ ...req.body, tier, ...usd, ...wageData, rateEURUSD: rates.rateEURUSD, rateILSUSD: rates.rateILSUSD });
     res.status(201).json(summary);
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
@@ -150,11 +179,16 @@ router.post('/', async (req, res) => {
 // PUT /api/daily-summaries/:id
 router.put('/:id', async (req, res) => {
   try {
+    const existing = await DailySummary.findById(req.params.id).select('chatterId');
+    const chatterId = req.body.chatterId || existing?.chatterId;
+    const chatter = await Chatter.findById(chatterId).select('bonusTier');
+    const tier = req.body.tier || chatter?.bonusTier || null;
     const rates = await fetchExchangeRates();
     const usd = calculateUSD(req.body, rates);
+    const wageData = calculateDailyWage(tier, usd.incomeTotalUSD);
     const summary = await DailySummary.findByIdAndUpdate(
       req.params.id,
-      { ...req.body, ...usd, rateEURUSD: rates.rateEURUSD, rateILSUSD: rates.rateILSUSD },
+      { ...req.body, tier, ...usd, ...wageData, rateEURUSD: rates.rateEURUSD, rateILSUSD: rates.rateILSUSD },
       { new: true, runValidators: true }
     );
     if (!summary) return res.status(404).json({ message: 'Summary not found' });

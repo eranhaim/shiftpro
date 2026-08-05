@@ -117,6 +117,31 @@ router.post("/request-shift", async (req, res) => {
   }
 });
 
+function calculateDailyWage(tier, incomeTotalUSD) {
+  const total = Number(incomeTotalUSD) || 0;
+  let wage = 0;
+  let luckyWheelSpin = false;
+
+  if (tier === 'A') {
+    wage = total * 0.15;
+  } else if (tier === 'B') {
+    const base = total * 0.12;
+    const bonus = Math.floor(total / 1000) * 20;
+    wage = base + bonus;
+    luckyWheelSpin = total >= 4000;
+  } else if (tier === 'C') {
+    const base = total * 0.10;
+    const per500 = Math.floor(total / 500) * 10;
+    const per1000 = Math.floor(total / 1000) * 25;
+    wage = base + per500 + per1000;
+  }
+
+  return {
+    dailyWage: Math.round(wage * 100) / 100,
+    luckyWheelSpin,
+  };
+}
+
 // POST /api/chatter-portal/submit-summary — submit a daily summary
 router.post("/submit-summary", async (req, res) => {
   try {
@@ -124,6 +149,9 @@ router.post("/submit-summary", async (req, res) => {
     if (!b.date) {
       return res.status(400).json({ message: "Date is required" });
     }
+
+    const chatter = await Chatter.findById(req.chatter.id).select('bonusTier');
+    const tier = chatter?.bonusTier || null;
 
     const rates = await fetchExchangeRates();
     const usd = calculateUSD(
@@ -135,6 +163,8 @@ router.post("/submit-summary", async (req, res) => {
       },
       rates,
     );
+
+    const wageData = calculateDailyWage(tier, usd.incomeTotalUSD);
 
     const summary = await DailySummary.create({
       chatterId: req.chatter.id,
@@ -163,6 +193,8 @@ router.post("/submit-summary", async (req, res) => {
       ...usd,
       rateEURUSD: rates.rateEURUSD,
       rateILSUSD: rates.rateILSUSD,
+      tier,
+      ...wageData,
       allDepositsVerified: b.allDepositsVerified || false,
       improvementSuggestions: b.improvementSuggestions,
       contentRequest: b.contentRequest,

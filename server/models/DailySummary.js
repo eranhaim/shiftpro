@@ -54,6 +54,11 @@ const dailySummarySchema = new mongoose.Schema({
 
   allDepositsVerified: { type: Boolean, default: false },
 
+  // Tier & wage calculation
+  tier: { type: String, enum: ['A', 'B', 'C', null], default: null },
+  dailyWage: { type: Number, default: 0 },
+  luckyWheelSpin: { type: Boolean, default: false }, // Tier B: income >= $4,000
+
   improvementSuggestions: { type: String },
   contentRequest: { type: String },
   selfImprovementPoint: { type: String },

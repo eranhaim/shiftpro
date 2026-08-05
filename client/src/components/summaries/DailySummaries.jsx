@@ -50,6 +50,7 @@ const EMPTY_FORM = {
   chatterId: "",
   date: new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' }),
   shiftType: "בוקר",
+  tier: null,
   incomeTelegram: 0,
   incomeOnlyfans: 0,
   incomeTransfers: 0,
@@ -175,6 +176,7 @@ export default function DailySummaries() {
       contentRequest: summary.contentRequest || "",
       selfImprovementPoint: summary.selfImprovementPoint || "",
       selfPreservationPoint: summary.selfPreservationPoint || "",
+      tier: summary.tier || null,
     });
     setShowForm(true);
   };
@@ -561,6 +563,8 @@ export default function DailySummaries() {
                     <th className="py-3 px-4 font-medium whitespace-nowrap">העברות <span className="text-xs text-gray-600">(₪→$)</span></th>
                     <th className="py-3 px-4 font-medium whitespace-nowrap">אחר <span className="text-xs text-gray-600">(₪→$)</span></th>
                     <th className="py-3 px-4 font-medium whitespace-nowrap">סה"כ $</th>
+                    <th className="py-3 px-4 font-medium whitespace-nowrap">Tier</th>
+                    <th className="py-3 px-4 font-medium whitespace-nowrap">שכר $</th>
                     <th className="py-3 px-4 font-medium whitespace-nowrap">פעולות</th>
                   </tr>
                 </thead>
@@ -599,6 +603,20 @@ export default function DailySummaries() {
                           {!hasUSD && <span className="text-gray-600 text-xs mr-1">(ללא המרה)</span>}
                         </td>
                         <td className="py-2.5 px-4 whitespace-nowrap">
+                          {s.tier ? (
+                            <span className={`px-2 py-0.5 rounded text-xs font-bold ${
+                              s.tier === 'A' ? 'bg-yellow-500/20 text-yellow-400' :
+                              s.tier === 'B' ? 'bg-blue-500/20 text-blue-400' :
+                              'bg-gray-500/20 text-gray-400'
+                            }`}>Tier {s.tier}</span>
+                          ) : <span className="text-gray-600">—</span>}
+                        </td>
+                        <td className="py-2.5 px-4 whitespace-nowrap">
+                          {s.dailyWage ? (
+                            <span className="text-purple-400 font-bold">${s.dailyWage.toFixed(2)}</span>
+                          ) : <span className="text-gray-600">—</span>}
+                        </td>
+                        <td className="py-2.5 px-4 whitespace-nowrap">
                           <button
                             onClick={() => setViewingSummary(s)}
                             className="text-gray-400 hover:text-blue-400 transition-colors text-xs flex items-center gap-1 whitespace-nowrap"
@@ -628,6 +646,10 @@ export default function DailySummaries() {
                     </td>
                     <td className="py-3 px-4 text-green-400">
                       ${summaries.filter(s => !filterChatter || (s.chatterId?._id || s.chatterId) === filterChatter).reduce((s, r) => s + (r.incomeTotalUSD || r.incomeTotal || 0), 0).toFixed(2)}
+                    </td>
+                    <td></td>
+                    <td className="py-3 px-4 text-purple-400">
+                      ${summaries.filter(s => !filterChatter || (s.chatterId?._id || s.chatterId) === filterChatter).reduce((s, r) => s + (r.dailyWage || 0), 0).toFixed(2)}
                     </td>
                     <td></td>
                   </tr>
@@ -787,9 +809,21 @@ export default function DailySummaries() {
                       </div>
 
                       <div className="flex items-center gap-3 shrink-0">
+                        {s.tier && (
+                          <span className={`px-2 py-0.5 rounded text-xs font-bold ${
+                            s.tier === 'A' ? 'bg-yellow-500/20 text-yellow-400' :
+                            s.tier === 'B' ? 'bg-blue-500/20 text-blue-400' :
+                            'bg-gray-500/20 text-gray-400'
+                          }`}>Tier {s.tier}</span>
+                        )}
                         <span className="text-green-400 font-bold text-sm">
                           ${total.toFixed(2)}
                         </span>
+                        {s.dailyWage > 0 && (
+                          <span className="text-purple-400 font-bold text-sm">
+                            שכר: ${s.dailyWage.toFixed(2)}
+                          </span>
+                        )}
                         <button
                           onClick={() => setViewingSummary(s)}
                           className="text-gray-400 hover:text-blue-400 transition-colors text-xs flex items-center gap-1"
@@ -808,11 +842,18 @@ export default function DailySummaries() {
             {chatterSummaries.length > 0 && (
               <div className="px-5 py-3 bg-gray-800/50 border-t border-gray-800 flex justify-between items-center">
                 <span className="text-sm text-gray-400">סה"כ</span>
-                <span className="text-green-400 font-bold">
-                  ${chatterSummaries
-                    .reduce((sum, s) => sum + (s.incomeTotalUSD || s.incomeTotal || 0), 0)
-                    .toFixed(2)}
-                </span>
+                <div className="flex items-center gap-4">
+                  <span className="text-green-400 font-bold">
+                    ${chatterSummaries
+                      .reduce((sum, s) => sum + (s.incomeTotalUSD || s.incomeTotal || 0), 0)
+                      .toFixed(2)}
+                  </span>
+                  {chatterSummaries.some(s => s.dailyWage > 0) && (
+                    <span className="text-purple-400 font-bold">
+                      שכר: ${chatterSummaries.reduce((sum, s) => sum + (s.dailyWage || 0), 0).toFixed(2)}
+                    </span>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -1196,6 +1237,23 @@ export default function DailySummaries() {
                     <option value="בוקר">בוקר</option>
                     <option value="ערב">ערב</option>
                     <option value="כפולה">כפולה</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-400 block mb-1">
+                    Tier
+                  </label>
+                  <select
+                    value={form.tier || ""}
+                    onChange={(e) =>
+                      setForm({ ...form, tier: e.target.value || null })
+                    }
+                    className="w-full bg-gray-800 border border-gray-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+                  >
+                    <option value="">ללא</option>
+                    <option value="A">Tier A</option>
+                    <option value="B">Tier B</option>
+                    <option value="C">Tier C</option>
                   </select>
                 </div>
                 <div>
