@@ -39,7 +39,7 @@ const THIN_BORDER = {
   right: { style: 'thin', color: { argb: 'FFB0B0B0' } },
 };
 
-function toISODate(d) {
+function toCalendarDate(d) {
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
@@ -51,7 +51,7 @@ function platformLabel(platform) {
 }
 
 function getShiftsForDayType(shifts, date, type) {
-  const dateStr = toISODate(date);
+  const dateStr = toCalendarDate(date);
   return shifts.filter((s) => {
     const shiftDate = s.date?.split('T')[0] || s.date;
     const isMatchDate = shiftDate === dateStr;
@@ -251,5 +251,5 @@ export default async function exportShiftsExcel(weekStart, shifts) {
   const blob = new Blob([buffer], {
     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   });
-  saveAs(blob, `לוח-משמרות-${toISODate(weekStart)}.xlsx`);
+  saveAs(blob, `לוח-משמרות-${toCalendarDate(weekStart)}.xlsx`);
 }

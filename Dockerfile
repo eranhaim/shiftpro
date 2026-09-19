@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install -y \
     libgbm1 \
     libnss3 \
     libatk-bridge2.0-0 \
+    libcurl4 \
     libxkbcommon0 \
     libxcomposite1 \
     libxdamage1 \

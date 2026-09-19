@@ -4,6 +4,12 @@ import Shift from '../models/Shift.js';
 import Chatter from '../models/Chatter.js';
 import auth from '../middleware/auth.js';
 
+function startOfNextDay(dateString) {
+  const date = new Date(`${dateString}T00:00:00.000Z`);
+  date.setUTCDate(date.getUTCDate() + 1);
+  return date;
+}
+
 async function fetchExchangeRates() {
   try {
     const res = await fetch('https://api.frankfurter.app/latest?from=USD&to=EUR,ILS');
@@ -91,7 +97,7 @@ router.get('/income', async (req, res) => {
     if (req.query.startDate || req.query.endDate) {
       match.date = {};
       if (req.query.startDate) match.date.$gte = new Date(req.query.startDate);
-      if (req.query.endDate) match.date.$lte = new Date(req.query.endDate);
+      if (req.query.endDate) match.date.$lt = startOfNextDay(req.query.endDate);
     }
 
     const result = await DailySummary.aggregate([
@@ -144,7 +150,7 @@ router.get('/', async (req, res) => {
     if (req.query.startDate || req.query.endDate) {
       filter.date = {};
       if (req.query.startDate) filter.date.$gte = new Date(req.query.startDate);
-      if (req.query.endDate) filter.date.$lte = new Date(req.query.endDate);
+      if (req.query.endDate) filter.date.$lt = startOfNextDay(req.query.endDate);
     }
 
     let query = DailySummary.find(filter)

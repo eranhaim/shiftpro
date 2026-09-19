@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   RefreshCw,
   AlertTriangle,
@@ -76,16 +76,18 @@ export default function DailySummaries() {
   const [chatters, setChatters] = useState([]);
   const [monthlyGoals, setMonthlyGoals] = useState([]);
   const [loading, setLoading] = useState(true);
+  const hasLoaded = useRef(false);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
 
   // Selected chatter view
   const [selectedChatterId, setSelectedChatterId] = useState(null);
 
-  // Filters
+  // Keep date input drafts separate from the filters applied to the API.
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [filterActive, setFilterActive] = useState(false);
+  const [appliedFilters, setAppliedFilters] = useState({ startDate: "", endDate: "" });
+  const filterActive = Boolean(appliedFilters.startDate || appliedFilters.endDate);
   const [filterChatter, setFilterChatter] = useState("");
 
   // View modal
@@ -101,8 +103,8 @@ export default function DailySummaries() {
     try {
       setError(null);
       const params = {};
-      if (filterActive && startDate) params.startDate = startDate;
-      if (filterActive && endDate) params.endDate = endDate;
+      if (appliedFilters.startDate) params.startDate = appliedFilters.startDate;
+      if (appliedFilters.endDate) params.endDate = appliedFilters.endDate;
 
       const now = new Date();
       const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
@@ -119,11 +121,14 @@ export default function DailySummaries() {
     } catch (err) {
       setError(err.message);
     }
-  }, [filterActive, startDate, endDate]);
+  }, [appliedFilters]);
 
   useEffect(() => {
-    setLoading(true);
-    fetchData().finally(() => setLoading(false));
+    if (!hasLoaded.current) setLoading(true);
+    fetchData().finally(() => {
+      setLoading(false);
+      hasLoaded.current = true;
+    });
   }, [fetchData]);
 
   const handleRefresh = async () => {
@@ -133,17 +138,25 @@ export default function DailySummaries() {
   };
 
   const handleFilter = () => {
-    if (startDate && endDate && startDate > endDate) {
-      setStartDate(endDate);
-      setEndDate(startDate);
+    const normalizedStartDate =
+      startDate && endDate && startDate > endDate ? endDate : startDate;
+    const normalizedEndDate =
+      startDate && endDate && startDate > endDate ? startDate : endDate;
+
+    if (normalizedStartDate !== startDate) {
+      setStartDate(normalizedStartDate);
+      setEndDate(normalizedEndDate);
     }
-    setFilterActive(true);
+    setAppliedFilters({
+      startDate: normalizedStartDate,
+      endDate: normalizedEndDate,
+    });
   };
 
   const clearFilter = () => {
     setStartDate("");
     setEndDate("");
-    setFilterActive(false);
+    setAppliedFilters({ startDate: "", endDate: "" });
   };
 
   // Form handlers
@@ -288,7 +301,7 @@ export default function DailySummaries() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `daily-summaries-${startDate || "all"}-${endDate || "all"}.csv`;
+    a.download = `daily-summaries-${appliedFilters.startDate || "all"}-${appliedFilters.endDate || "all"}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -355,8 +368,8 @@ export default function DailySummaries() {
         .filter((s) => {
           if (!filterActive) return true;
           const d = new Date(s.date);
-          if (startDate && d < new Date(startDate)) return false;
-          if (endDate && d > new Date(endDate)) return false;
+          if (appliedFilters.startDate && d < new Date(appliedFilters.startDate)) return false;
+          if (appliedFilters.endDate && d > new Date(appliedFilters.endDate)) return false;
           return true;
         })
         .sort((a, b) => new Date(b.date) - new Date(a.date))
